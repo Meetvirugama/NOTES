@@ -184,4 +184,11 @@ Calling `np.random.normal()` inside a `@tf.function` will run once during tracin
 
 ---
 
+## 📈 Chapter 12 Summary Dashboard
+
+![Chapter 12 Summary Dashboard](../Visuals/10_summary_dashboard.png)
+> 📊 **Graph 10:** Comprehensive visual summary of all Chapter 12 concepts: Tensors, Variables, Custom Components, Autodiff, and Graph Compilation.
+
+---
+
 **🔗 Previous Module →** [04_Autodiff_and_Custom_Training_Loops.md](04_Autodiff_and_Custom_Training_Loops.md)
