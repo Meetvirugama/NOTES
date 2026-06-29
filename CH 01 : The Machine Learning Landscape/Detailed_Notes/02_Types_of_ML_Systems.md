@@ -24,6 +24,8 @@ Think of three different ways to learn to make pizza:
 *   **Unsupervised:** You're given 1000 pizzas, no labels. You must figure out groups by yourself.
 *   **Reinforcement Learning:** You experiment, and a critic gives you points (+10 for tasty, -5 for burnt). You learn the optimal recipe through trial and error over thousands of attempts.
 
+![ML Taxonomy](../Visuals/02_ml_taxonomy.png)
+
 ---
 
 ## 🔍 1. Axis 1: Supervision {#concept-1}
@@ -112,8 +114,9 @@ The agent observes the environment, selects actions, receives rewards or penalti
 *   Each learning step is fast and cheap — the system can adapt to new data **on the fly**.
 *   Also used for **out-of-core learning**: datasets so large they don't fit in one machine's main memory. The algorithm loads and trains on chunks of data.
 
-> [!NOTE]
 > Out-of-core learning (training on huge datasets in chunks) is done offline. Don't confuse "online learning" with "training on the internet."
+
+![Batch vs Online Learning](../Visuals/09_batch_vs_online_learning.jpg)
 
 **The Learning Rate Parameter:**
 | Learning Rate | Behavior |

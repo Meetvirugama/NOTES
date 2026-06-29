@@ -13,6 +13,9 @@
 | 02 | Unregularized vs Regularized Trees | 2 | [02_regularization.png](Visuals/02_regularization.png) |
 | 03 | Step-wise Predictions of a Regression Tree | 3 | [03_regression_predictions.png](Visuals/03_regression_predictions.png) |
 | 04 | Sensitivity to Dataset Rotation | 4 | [04_rotation_sensitivity.png](Visuals/04_rotation_sensitivity.png) |
+| 05 | Decision Tree Stability Concept | 4 | [05_decision_tree_stability.jpg](Visuals/05_decision_tree_stability.jpg) |
+| 06 | Entropy vs Gini Impurity | 1 | [06_entropy_gini_impurity.jpg](Visuals/06_entropy_gini_impurity.jpg) |
+| 07 | Underfitting vs Overfitting Concept | 2 | [07_underfitting_overfitting.jpg](Visuals/07_underfitting_overfitting.jpg) |
 
 ---
 

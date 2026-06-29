@@ -36,6 +36,8 @@
 2. `housing.drop("total_bedrooms", axis=1)` — drop the entire column.
 3. `housing["total_bedrooms"].fillna(median, inplace=True)` — fill with a computed value.
 
+![Data Preprocessing](../Visuals/06_data_preprocessing.jpg)
+
 **Best Practice — `SimpleImputer`:**
 
 ```python

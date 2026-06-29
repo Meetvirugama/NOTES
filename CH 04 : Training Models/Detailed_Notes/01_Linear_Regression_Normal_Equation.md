@@ -55,6 +55,8 @@ To find the value of $\theta$ that minimizes the cost function, there is a close
 
 $$\hat{\theta} = (X^T X)^{-1} X^T y$$
 
+![The Normal Equation Concept](../Visuals/05_normal_equation.jpg)
+
 **Implementing it from scratch in NumPy:**
 ```python
 import numpy as np

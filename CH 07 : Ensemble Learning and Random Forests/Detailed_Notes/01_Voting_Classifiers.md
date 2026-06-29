@@ -52,6 +52,8 @@ There are two ways for an ensemble to cast their votes:
 *   It predicts the class with the highest average probability.
 *   Soft voting almost always achieves **higher performance** than hard voting because it gives more weight to highly confident models.
 
+![Voting Classifier Concept](../Visuals/07_voting_classifier.jpg)
+
 **Scikit-Learn Implementation:**
 ```python
 from sklearn.ensemble import VotingClassifier

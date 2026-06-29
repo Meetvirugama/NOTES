@@ -32,6 +32,8 @@ Our human brains are built for 3D space, so our intuition completely fails when 
 
 *(In theory, you could just add more training data. But to adequately fill a 100-dimensional space, you would need more training instances than there are atoms in the observable universe).*
 
+![Dimensionality Reduction Concept](../Visuals/07_dimensionality_reduction.jpg)
+
 ---
 
 ## 🔍 2. Approach 1: Projection {#concept-2}
@@ -43,6 +45,8 @@ In the real world, training instances are almost never spread out uniformly acro
 Because of this, data points usually lie close to a much lower-dimensional **subspace**.
 Imagine a cluster of 3D data points that happen to form the shape of a flat dinner plate. The data exists in 3D, but it actually only *needs* 2 dimensions to be perfectly described. 
 By dropping a perpendicular line from every point down onto that 2D plate, you can **project** the 3D data into 2D. 
+
+![Data Compression via Projection](../Visuals/06_data_compression.jpg)
 
 ---
 

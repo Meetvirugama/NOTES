@@ -27,6 +27,8 @@ Standard PCA is strictly linear. If you use it on a highly non-linear dataset (l
 By applying the Kernel Trick, kPCA implicitly maps the dataset into an infinitely high-dimensional feature space where it *is* linear, applies standard PCA there, and then brings it back down.
 *   **Result:** You get a non-linear dimensionality reduction in the original space.
 
+![Kernel PCA Concept](../Visuals/08_pca_dimension_2.jpg)
+
 ```python
 from sklearn.decomposition import KernelPCA
 

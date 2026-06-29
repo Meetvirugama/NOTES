@@ -120,6 +120,8 @@ This is one of the most frequently tested interview questions:
 *   OvR = 10 classifiers
 *   OvO = 10 × 9 / 2 = **45 classifiers**
 
+![OvR vs OvO Concept](../Visuals/08_ovr_vs_ovo.jpg)
+
 **Scikit-Learn auto-selects the right strategy:**
 ```python
 from sklearn.svm import SVC
@@ -223,6 +225,8 @@ Each instance can belong to **multiple classes simultaneously**.
 **Example:** Given a digit image, output:
 1. Is it large? (7, 8, or 9 → True/False)
 2. Is it odd? (1, 3, 5, 7, 9 → True/False)
+
+![Multilabel Concept](../Visuals/07_multilabel_concept.jpg)
 
 ```python
 from sklearn.neighbors import KNeighborsClassifier

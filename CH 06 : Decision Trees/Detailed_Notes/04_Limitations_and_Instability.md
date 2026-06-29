@@ -48,6 +48,8 @@ More generally, the main issue with Decision Trees is that they are incredibly s
 Actually, even if you don't remove any data at all, you might get a different tree! Scikit-Learn's CART training algorithm is stochastic (it randomly selects the set of features to evaluate at each node).
 *   Unless you set the `random_state` hyperparameter, training the exact same code twice will yield two different models.
 
+![Decision Tree Stability Concept](../Visuals/05_decision_tree_stability.jpg)
+
 **The Ultimate Fix (Preview to Chapter 7):**
 **Random Forests** solve this instability problem. By training hundreds of slightly different trees and averaging their predictions together, the random errors and instabilities cancel out, leaving a highly robust and powerful model.
 

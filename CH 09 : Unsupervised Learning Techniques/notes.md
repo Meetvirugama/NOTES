@@ -14,6 +14,10 @@
 | 03 | Silhouette Diagrams (Good vs Bad) | 3 | [03_silhouette_diagram.png](Visuals/03_silhouette_diagram.png) |
 | 04 | DBSCAN (Core vs Anomaly) | 5 | [04_dbscan.png](Visuals/04_dbscan.png) |
 | 05 | Gaussian Mixture Model (Ellipsoids) | 6 | [05_gmm_ellipsoids.png](Visuals/05_gmm_ellipsoids.png) |
+| 06 | Clustering Methods Overview | 1 | [06_clustering_methods_overview.jpg](Visuals/06_clustering_methods_overview.jpg) |
+| 07 | DBSCAN Clustering Demo | 5 | [07_dbscan_clustering.jpg](Visuals/07_dbscan_clustering.jpg) |
+| 08 | Gaussian Mixture Model Concept | 6 | [08_gaussian_mixture_model.jpg](Visuals/08_gaussian_mixture_model.jpg) |
+| 09 | K-Means Clustering Concept | 2 | [09_k_means_clustering.jpg](Visuals/09_k_means_clustering.jpg) |
 
 ---
 

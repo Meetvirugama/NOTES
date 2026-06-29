@@ -13,6 +13,10 @@
 | 02 | Underfitting vs Overfitting (Learning Curves) | 3 | [02_learning_curves.png](Visuals/02_learning_curves.png) |
 | 03 | Early Stopping Regularization | 4 | [03_early_stopping.png](Visuals/03_early_stopping.png) |
 | 04 | The Sigmoid Function | 5 | [04_sigmoid_function.png](Visuals/04_sigmoid_function.png) |
+| 05 | The Normal Equation Concept | 1 | [05_normal_equation.jpg](Visuals/05_normal_equation.jpg) |
+| 06 | Gradient Descent Comparison | 2 | [06_gd_comparison.jpg](Visuals/06_gd_comparison.jpg) |
+| 07 | Lasso Feature Selection Concept | 4 | [07_lasso_feature_selection.jpg](Visuals/07_lasso_feature_selection.jpg) |
+| 08 | Logistic Regression Decision Boundary | 5 | [08_logistic_decision_boundary.jpg](Visuals/08_logistic_decision_boundary.jpg) |
 
 ---
 

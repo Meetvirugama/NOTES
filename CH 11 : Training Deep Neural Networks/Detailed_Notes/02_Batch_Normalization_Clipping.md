@@ -49,6 +49,8 @@ For a mini-batch $B$ of size $m_B$, the BN layer performs the following calculat
     *Where $\mathbf{\gamma}$ (scale parameter) and $\mathbf{\beta}$ (shift parameter) are learnable parameters of the layer.*
 
 ![BN Flow](../Visuals/04_batch_normalization_flow.png)
+
+![Batch Normalization Concept](../Visuals/21_batch_normalization_concept.jpg)
 > 📊 **Graph 04:** Execution pipeline of Batch Normalization showing the mini-batch standardization steps followed by the learnable scaling ($\gamma$) and shifting ($\beta$) operations.
 
 ![Normalization Methods Comparison](../Visuals/16_normalization_comparison.png)

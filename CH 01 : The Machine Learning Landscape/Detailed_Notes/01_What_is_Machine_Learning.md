@@ -71,6 +71,10 @@ Machine Learning:
 [Data + Answers] → Computer → Rules (the Model)
 ```
 
+![Traditional vs Machine Learning](../Visuals/01_traditional_vs_ml.png)
+
+![Detailed Traditional vs ML](../Visuals/05_traditional_vs_ml_detailed.jpg)
+
 ### Machine Learning Shines In These 4 Scenarios:
 
 | Scenario | Why ML Wins | Example |
@@ -97,6 +101,8 @@ Machine Learning:
 | High-dimensional data visualization | Unsupervised / Dimensionality Reduction | Ch. 8 |
 | Recommender systems | Supervised | ANNs |
 | Game-playing bot | Reinforcement Learning | RL (Ch. 18), e.g., AlphaGo |
+
+![Machine Learning Applications](../Visuals/08_ml_applications.jpg)
 
 ---
 

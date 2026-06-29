@@ -58,6 +58,8 @@ Adding features manually (`PolynomialFeatures`) has a massive flaw: if you want 
 **The Solution: The Kernel Trick**
 When you use SVMs, you can apply an almost miraculous mathematical technique. It allows the SVM to find the exact same decision boundary as if you had added millions of polynomial features, **but without actually having to compute or store them**.
 
+![Kernel Trick Concept](../Visuals/06_kernel_trick_concept.jpg)
+
 ```python
 from sklearn.svm import SVC
 

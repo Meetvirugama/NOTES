@@ -69,6 +69,8 @@ Finding the globally optimal tree is an **NP-Complete** problem. It requires $O(
 
 A non-parametric model (like a Decision Tree) has no predefined shape. If left unconstrained, the tree will grow until every single leaf contains exactly 1 instance, perfectly memorizing the training data (**extreme overfitting**).
 
+![Underfitting vs Overfitting Concept](../Visuals/07_underfitting_overfitting.jpg)
+
 To avoid this, we **Regularize** the tree by restricting its freedom.
 
 **Key Scikit-Learn Hyperparameters:**

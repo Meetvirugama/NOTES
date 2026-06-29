@@ -73,6 +73,8 @@ $$\sigma'(z) = \sigma(z)(1-\sigma(z)) \leq 0.25 \quad \forall z$$
 The maximum derivative is 0.25, occurring at z=0. So each sigmoid layer multiplies the gradient by at most 0.25. After 10 layers: $0.25^{10} \approx 9.5 \times 10^{-7}$ — essentially zero!
 
 ![Vanishing Gradients](../Visuals/17_vanishing_gradients_sigmoid.png)
+
+![Vanishing Gradient Intuition](../Visuals/20_vanishing_gradient_intuition.jpg)
 > 📊 **Graph 17:** The derivative of the logistic (sigmoid) activation function. Notice its maximum value is 0.25, which mathematically guarantees vanishing gradients in deep networks.
 
 **The initialization problem:** If weights are initialized with variance $\sigma^2$, the variance of the forward signal and backward gradient depends on $n \cdot \sigma^2$ where $n$ is the number of neurons. For healthy signal flow:

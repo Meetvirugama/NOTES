@@ -33,6 +33,8 @@ DBSCAN (Density-Based Spatial Clustering of Applications with Noise) works based
 ![Visual Asset](../Visuals/04_dbscan.png)
 > 📊 **Graph 04:** DBSCAN identifying core instances and anomaly points
 
+![DBSCAN Clustering Demo](../Visuals/07_dbscan_clustering.jpg)
+
 ---
 
 ## 🔍 2. DBSCAN Hyperparameters & Predictions {#concept-2}

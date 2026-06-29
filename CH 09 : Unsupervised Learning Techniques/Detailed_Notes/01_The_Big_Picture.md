@@ -49,6 +49,8 @@ The objective is to learn what "normal" data looks like, and then flag instances
 Estimating the probability density function (PDF) of the underlying process that created the data. 
 *   This is the mathematical foundation often used for anomaly detection (if a data point lands in a region where the estimated probability density is 0.001%, it is flagged as an anomaly).
 
+![Clustering Methods Overview](../Visuals/06_clustering_methods_overview.jpg)
+
 ---
 
 ## ❌ Common Beginner Mistakes {#mistakes}

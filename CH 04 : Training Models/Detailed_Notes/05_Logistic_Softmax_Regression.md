@@ -91,6 +91,8 @@ log_reg.fit(X, y)
 This 1.6 cm point is the **Decision Boundary**.
 If you pass 2 features (petal length and width), the decision boundary becomes a literal straight line separating the two classes.
 
+![Logistic Regression Decision Boundary](../Visuals/08_logistic_decision_boundary.jpg)
+
 ---
 
 ## 🔍 4. Softmax Regression (Multiclass) & Cross Entropy {#concept-4}

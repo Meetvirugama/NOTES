@@ -13,6 +13,10 @@
 | 02 | Precision/Recall vs Threshold & PR Curve | 2 | [02_precision_recall_curve.png](Visuals/02_precision_recall_curve.png) |
 | 03 | Normalized Error Confusion Matrix | 3 | [03_error_analysis.png](Visuals/03_error_analysis.png) |
 | 04 | ROC Curve — SGD vs Random Forest | 3 | [04_roc_curves.png](Visuals/04_roc_curves.png) |
+| 05 | Confusion Matrix Concept | 2 | [05_confusion_matrix_concept.jpg](Visuals/05_confusion_matrix_concept.jpg) |
+| 06 | Precision Concept | 2 | [06_precision_concept.jpg](Visuals/06_precision_concept.jpg) |
+| 07 | Multilabel Classification Concept | 3 | [07_multilabel_concept.jpg](Visuals/07_multilabel_concept.jpg) |
+| 08 | OvR vs OvO Concept | 3 | [08_ovr_vs_ovo.jpg](Visuals/08_ovr_vs_ovo.jpg) |
 
 ---
 

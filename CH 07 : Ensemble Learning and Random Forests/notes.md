@@ -14,6 +14,9 @@
 | 03 | Feature Importance (MNIST Pixel Importance) | 3 | [03_feature_importance.png](Visuals/03_feature_importance.png) |
 | 04 | AdaBoost vs. Gradient Boosting | 4 | [04_adaboost_vs_gradient.png](Visuals/04_adaboost_vs_gradient.png) |
 | 05 | Stacking (Aggregating with a Blender) | 5 | [05_stacking.png](Visuals/05_stacking.png) |
+| 06 | Bootstrap Sampling Concept | 2 | [06_bootstrap_sampling.jpg](Visuals/06_bootstrap_sampling.jpg) |
+| 07 | Voting Classifier Concept | 1 | [07_voting_classifier.jpg](Visuals/07_voting_classifier.jpg) |
+| 08 | Random Patches and Subspaces Concept | 2 | [08_random_patches_subspaces.jpg](Visuals/08_random_patches_subspaces.jpg) |
 
 ---
 

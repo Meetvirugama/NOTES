@@ -56,6 +56,8 @@ confusion_matrix(y_train_5, y_train_pred)
 └─────────────────────────────────────────────────────────┘
 ```
 
+![Confusion Matrix Concept](../Visuals/05_confusion_matrix_concept.jpg)
+
 | Cell | Name | Meaning |
 |---|---|---|
 | TN (53,057) | True Negative | Correctly identified NOT-5 |
@@ -87,6 +89,8 @@ precision_score(y_train_5, y_train_pred)
 
 **The Precision Triviality Problem:**
 A classifier that makes **exactly one positive prediction** and gets it right → Precision = 1/1 = 100%. But it catches virtually nothing. This is why precision must always be considered alongside recall.
+
+![Precision Concept](../Visuals/06_precision_concept.jpg)
 
 ---
 

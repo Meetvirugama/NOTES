@@ -49,6 +49,8 @@ For a model to generalize well, the training set must be **representative** of t
 *   **Sampling Noise:** If the sample is too small, unrepresentative data appears by pure chance.
 *   **Sampling Bias:** Even large samples can be nonrepresentative if the sampling **method** is flawed.
 
+![Sampling Bias](../Visuals/06_sampling_bias.jpg)
+
 > [!WARNING]
 > **Famous Sampling Bias Example — 1936 US Election:** The Literary Digest polled 2.4 million people (from telephone directories, magazines, clubs). They predicted Landon wins. Roosevelt won with 62%. The flaw: wealthier people (who tend Republican) were overrepresented in phone directories and club lists. Non-response bias also occurred — only 25% answered.
 
@@ -75,6 +77,8 @@ If training data is full of **errors, outliers, and noise**, the algorithm canno
 *   **Feature extraction:** Combining existing features to produce a more useful one (dimensionality reduction can help).
 *   **Creating new features:** Gathering new data from external sources.
 
+![Irrelevant vs Redundant Features](../Visuals/07_irrelevant_vs_redundant_features.jpg)
+
 ---
 
 ## 🔍 2. Challenge Category 2: Bad Algorithms — Overfitting {#concept-2}
@@ -87,7 +91,7 @@ Overfitting means the model performs very well on training data but **does not g
 *   A high-degree polynomial life satisfaction model can fit every training data point perfectly.
 *   It might even find a spurious pattern: "all countries with a 'w' in their name have life satisfaction > 7" (New Zealand 7.3, Norway 7.4, Sweden 7.2, Switzerland 7.5). This is noise, not signal.
 
-![Visual Asset](../Visuals/03_overfitting_underfitting.png)
+![Overfitting vs Underfitting](../Visuals/03_overfitting_underfitting.png)
 > 📊 **Graph 03:** Overfitting vs. Good Fit vs. Underfitting. The polynomial curve (blue, overfitting) perfectly memorizes all training points but will generalize poorly. The simple line (red, underfitting) misses the structure. The smooth curve (green) generalizes well.
 
 **Overfitting happens when model is too complex relative to:** 

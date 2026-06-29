@@ -14,6 +14,9 @@
 | 03 | Similarity Features using Gaussian RBF | 2 | [03_rbf_kernel.png](Visuals/03_rbf_kernel.png) |
 | 04 | SVM Regression (Large vs Small Epsilon) | 3 | [04_svm_regression.png](Visuals/04_svm_regression.png) |
 | 05 | The Hinge Loss Function | 4 | [05_hinge_loss.png](Visuals/05_hinge_loss.png) |
+| 06 | The Kernel Trick Concept | 2 | [06_kernel_trick_concept.jpg](Visuals/06_kernel_trick_concept.jpg) |
+| 07 | Support Vectors Concept | 1 | [07_support_vectors_concept.jpg](Visuals/07_support_vectors_concept.jpg) |
+| 08 | Soft Margin Concept | 1 | [08_soft_margin_concept.jpg](Visuals/08_soft_margin_concept.jpg) |
 
 ---
 

@@ -119,6 +119,8 @@ model = keras.models.Sequential([
 | Last hidden layer only | 0.5 |
 
 ![Dropout Mechanism](../Visuals/12_dropout_mechanism.png)
+
+![Dropout Concept](../Visuals/24_dropout_concept.jpg)
 > 📊 **Graph 12:** Dropout Mechanism. By randomly dropping neurons during training, the network is forced to learn redundant, robust representations.
 
 **Key Properties:**

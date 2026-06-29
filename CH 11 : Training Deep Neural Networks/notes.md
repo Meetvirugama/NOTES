@@ -31,6 +31,11 @@
 | 17 | Gradient Decay (Vanishing Gradients) in Deep Sigmoid Net | 1 | [17_vanishing_gradients_sigmoid.png](Visuals/17_vanishing_gradients_sigmoid.png) |
 | 18 | Cosine Learning Rate Schedule with Linear Warm-Up | 5 | [18_learning_rate_warmup.png](Visuals/18_learning_rate_warmup.png) |
 | 19 | Optimizer Paths Escaping a Saddle Point Contour | 4 | [19_optimizer_landscape_saddle.png](Visuals/19_optimizer_landscape_saddle.png) |
+| 20 | Vanishing Gradient Intuition | 1 | [20_vanishing_gradient_intuition.jpg](Visuals/20_vanishing_gradient_intuition.jpg) |
+| 21 | Batch Normalization Concept | 2 | [21_batch_normalization_concept.jpg](Visuals/21_batch_normalization_concept.jpg) |
+| 22 | Transfer Learning Using MobileNet | 3 | [22_transfer_learning_mobilenet.jpg](Visuals/22_transfer_learning_mobilenet.jpg) |
+| 23 | Evolution of Gradient-Based Optimizers | 4 | [23_optimizer_evolution.jpg](Visuals/23_optimizer_evolution.jpg) |
+| 24 | Dropout Concept | 6 | [24_dropout_concept.jpg](Visuals/24_dropout_concept.jpg) |
 
 ---
 

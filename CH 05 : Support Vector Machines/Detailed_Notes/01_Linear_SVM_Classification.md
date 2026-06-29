@@ -30,6 +30,8 @@ An SVM classifier thinks of the boundary as a **street**. It tries to fit the wi
 *   These edge instances are called **Support Vectors**.
 *   Adding more training data *off the street* will not affect the decision boundary at all! Only the support vectors matter.
 
+![Support Vectors Concept](../Visuals/07_support_vectors_concept.jpg)
+
 **Hard Margin:**
 When we strictly impose that *all* instances must be completely off the street and on the correct side, it is called a **Hard Margin**.
 *   **Problem 1:** It only works if the data is perfectly linearly separable.
@@ -55,6 +57,8 @@ To fix the issues with Hard Margins (outliers ruining the model), we use a **Sof
 The goal is to find a balance between:
 1.  Keeping the street as wide as possible.
 2.  Limiting **margin violations** (instances that end up in the middle of the street, or even on the wrong side).
+
+![Soft Margin Concept](../Visuals/08_soft_margin_concept.jpg)
 
 **The $C$ Hyperparameter:**
 In Scikit-Learn, this balance is controlled by $C$.

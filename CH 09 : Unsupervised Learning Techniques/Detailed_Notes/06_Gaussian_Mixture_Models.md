@@ -50,6 +50,8 @@ y_proba = gm.predict_proba(X)
 ![Visual Asset](../Visuals/05_gmm_ellipsoids.png)
 > 📊 **Graph 05:** GMM capturing stretched ellipsoidal clusters with density contours
 
+![Gaussian Mixture Model Concept](../Visuals/08_gaussian_mixture_model.jpg)
+
 ---
 
 ## 🔍 2. Anomaly Detection with GMMs {#concept-2}

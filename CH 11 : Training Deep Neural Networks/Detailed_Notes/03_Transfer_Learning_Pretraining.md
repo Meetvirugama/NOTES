@@ -59,6 +59,8 @@ Transfer learning = hire the experienced architect. You only need to teach them 
 5. Train only the new top layers on your small dataset
 
 ![Transfer Learning Stages](../Visuals/06_transfer_learning_stages.png)
+
+![Transfer Learning Using MobileNet](../Visuals/22_transfer_learning_mobilenet.jpg)
 > 📊 **Graph 06:** Transfer learning stages: Reusing lower layers, replacing the output head, and selectively fine-tuning.
 
 ```

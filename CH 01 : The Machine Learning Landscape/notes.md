@@ -16,6 +16,12 @@
 | 02 | Supervised, Unsupervised, RL Taxonomy | 2 | [02_ml_taxonomy.png](Visuals/02_ml_taxonomy.png) |
 | 03 | Overfitting vs. Good Fit vs. Underfitting | 3 | [03_overfitting_underfitting.png](Visuals/03_overfitting_underfitting.png) |
 | 04 | Train/Val/Test Split & K-Fold CV | 4 | [04_cross_validation.png](Visuals/04_cross_validation.png) |
+| 05 | Detailed Traditional vs ML | 1 | [05_traditional_vs_ml_detailed.jpg](Visuals/05_traditional_vs_ml_detailed.jpg) |
+| 06 | Sampling Bias | 3 | [06_sampling_bias.jpg](Visuals/06_sampling_bias.jpg) |
+| 07 | Irrelevant vs Redundant Features | 3 | [07_irrelevant_vs_redundant_features.jpg](Visuals/07_irrelevant_vs_redundant_features.jpg) |
+| 08 | ML Applications | 1 | [08_ml_applications.jpg](Visuals/08_ml_applications.jpg) |
+| 09 | Batch vs Online Learning | 2 | [09_batch_vs_online_learning.jpg](Visuals/09_batch_vs_online_learning.jpg) |
+| 10 | Train / Val / Test Split Diagram | 4 | [10_train_val_test_split.jpg](Visuals/10_train_val_test_split.jpg) |
 
 ---
 

@@ -71,6 +71,8 @@ tree_rmse = np.sqrt(mean_squared_error(housing_labels, tree_reg.predict(housing_
 
 **RMSE = 0!** This looks perfect, but it is **massively overfitting**. The Decision Tree memorized the entire training set.
 
+![Error Analysis Flowchart](../Visuals/09_error_analysis.jpg)
+
 ---
 
 ## 🔍 2. K-Fold Cross-Validation for Robust Evaluation {#concept-2}
@@ -90,6 +92,8 @@ tree_rmse_scores = np.sqrt(-scores)
 > Scikit-Learn's cross-validation uses a **utility function** (higher = better). Since MSE is a cost function (lower = better), it returns the *negative* MSE. You must negate before taking the square root: `np.sqrt(-scores)`.
 
 **Cross-Validation Results Summary:**
+
+![K-Fold Cross Validation](../Visuals/11_kfold_cv.jpg)
 
 | Model | CV RMSE (Mean) | CV RMSE (Std Dev) | Verdict |
 |---|---|---|---|
@@ -121,6 +125,8 @@ forest_rmse  # = 18,603 on TRAINING (lower than val → still overfitting)
 
 ## 🔍 3. Fine-Tuning with GridSearchCV {#concept-3}
 
+![Hyperparameter Tuning](../Visuals/08_hyperparameter_tuning.jpg)
+
 GridSearchCV exhaustively searches every combination you specify, evaluating each with cross-validation:
 
 ```python
@@ -140,6 +146,8 @@ grid_search.fit(housing_prepared, housing_labels)
 *   **First dict:** 3 × 4 = 12 combinations.
 *   **Second dict:** 2 × 3 = 6 combinations.
 *   **Total:** 18 combinations × 5-fold CV = **90 training rounds**.
+
+![Grid Search Concept](../Visuals/07_grid_search_concept.jpg)
 
 ```python
 grid_search.best_params_

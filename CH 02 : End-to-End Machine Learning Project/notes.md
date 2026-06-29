@@ -14,6 +14,12 @@
 | 03 | ColumnTransformer Pipeline | 4 | [03_pipeline_architecture.png](Visuals/03_pipeline_architecture.png) |
 | 04 | Model Comparison (CV RMSE) | 5 | [04_model_comparison.png](Visuals/04_model_comparison.png) |
 | 05 | Feature Importances | 5 | [05_feature_importances.png](Visuals/05_feature_importances.png) |
+| 06 | Data Preprocessing | 4 | [06_data_preprocessing.jpg](Visuals/06_data_preprocessing.jpg) |
+| 07 | Grid Search Concept | 5 | [07_grid_search_concept.jpg](Visuals/07_grid_search_concept.jpg) |
+| 08 | Hyperparameter Tuning | 5 | [08_hyperparameter_tuning.jpg](Visuals/08_hyperparameter_tuning.jpg) |
+| 09 | Error Analysis Flowchart | 5 | [09_error_analysis.jpg](Visuals/09_error_analysis.jpg) |
+| 10 | Data Splitting Concept | 2 | [10_data_splitting.jpg](Visuals/10_data_splitting.jpg) |
+| 11 | K-Fold Cross Validation | 5 | [11_kfold_cv.jpg](Visuals/11_kfold_cv.jpg) |
 
 ---
 

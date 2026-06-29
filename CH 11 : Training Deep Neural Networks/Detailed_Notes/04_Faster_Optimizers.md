@@ -296,6 +296,8 @@ def piecewise_constant_fn(epoch):
 ## 📊 Optimizer Comparison Table {#comparison}
 
 ![Adaptive Optimizers Comparison](../Visuals/09_adaptive_optimizers.png)
+
+![Evolution of Gradient-Based Optimizers](../Visuals/23_optimizer_evolution.jpg)
 > 📊 **Graph 09:** Comparison of optimization paths. Adaptive optimizers (AdaGrad, RMSProp, Adam) scale their steps per parameter, heading straight toward the minimum.
 
 ![Optimizer Landscape Saddle Point](../Visuals/19_optimizer_landscape_saddle.png)

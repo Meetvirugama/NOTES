@@ -72,6 +72,8 @@ Suppose you train 100 models with 100 different values for the regularization hy
 └──────────────────────────────────────────────────────┘
 ```
 
+![Train Validation Test Split](../Visuals/10_train_val_test_split.jpg)
+
 > [!CAUTION]
 > **Data Snooping Bias:** If you peek at the test set — even just once, even just to explore it — you will subconsciously bias your design decisions toward that data. The test set score will be overly optimistic and the model will underperform in production.
 
@@ -97,6 +99,8 @@ Fold 4: [TRN | TRN | TRN | VAL | TRN]
 Fold 5: [TRN | TRN | TRN | TRN | VAL]
 Final score = Average of 5 fold scores
 ```
+
+![Cross Validation](../Visuals/04_cross_validation.png)
 
 **Pros:** Maximizes use of training data, very robust performance estimate.  
 **Cons:** Trains the model K times — K× more expensive. Not practical for multi-week deep learning runs.

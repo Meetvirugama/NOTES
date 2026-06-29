@@ -29,6 +29,8 @@ Both bagging and pasting allow training instances to be sampled several times ac
 **Why is Bagging better?**
 Bootstrapping (sampling with replacement) introduces a bit more diversity into the subsets. This extra diversity means the predictors end up being less correlated with each other. This reduces the variance of the overall ensemble. Bagging generally results in better models and is the industry default.
 
+![Bootstrap Sampling Concept](../Visuals/06_bootstrap_sampling.jpg)
+
 **Scikit-Learn Implementation:**
 ```python
 from sklearn.ensemble import BaggingClassifier
@@ -79,6 +81,8 @@ Just like we sample the *instances* (rows), we can also sample the *features* (c
 *   **Random Subspaces Method:** Keeping all training instances (`bootstrap=False`, `max_samples=1.0`) but sampling features (`bootstrap_features=True`, `max_features < 1.0`).
 
 Sampling features creates even more predictor diversity, trading a tiny bit more bias for even lower variance.
+
+![Random Patches and Subspaces Concept](../Visuals/08_random_patches_subspaces.jpg)
 
 ---
 

@@ -70,6 +70,8 @@ Lasso Regression tends to **eliminate the weights of the least important feature
 *   In other words, Lasso automatically performs **feature selection** and outputs a *sparse model* (few non-zero weights).
 *   Why? The $\ell_1$ penalty gradient pushes parameters directly toward 0, whereas $\ell_2$ gradient just shrinks them proportionally, slowing down as they approach 0 but never reaching it.
 
+![Lasso Feature Selection Concept](../Visuals/07_lasso_feature_selection.jpg)
+
 **Scikit-Learn Implementation:**
 ```python
 from sklearn.linear_model import Lasso

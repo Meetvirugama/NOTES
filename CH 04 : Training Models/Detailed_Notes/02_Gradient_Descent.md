@@ -137,6 +137,8 @@ Computes gradients on small, random sets of instances called **mini-batches**.
 
 ## 🔍 5. Algorithm Comparison Matrix {#concept-5}
 
+![Gradient Descent Comparison](../Visuals/06_gd_comparison.jpg)
+
 | Algorithm | Large $m$ (Instances) | Out-of-core | Large $n$ (Features) | Hyperparams | Scaling Required? | Scikit-Learn Class |
 |---|---|---|---|---|---|---|
 | **Normal Equation** | Fast | No | Slow | 0 | No | N/A |

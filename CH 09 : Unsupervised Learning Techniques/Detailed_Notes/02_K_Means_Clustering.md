@@ -44,6 +44,8 @@ y_pred = kmeans.fit_predict(X)
 print(kmeans.cluster_centers_)
 ```
 
+![K-Means Clustering Concept](../Visuals/09_k_means_clustering.jpg)
+
 ---
 
 ## 🔍 2. Voronoi Tessellations & Hard vs Soft Clustering {#concept-2}

@@ -14,6 +14,9 @@
 | 03 | Explained Variance (The Elbow Plot) | 3 | [03_explained_variance.png](Visuals/03_explained_variance.png) |
 | 04 | Kernel PCA & Pre-image Error | 4 | [04_kpca_preimage.png](Visuals/04_kpca_preimage.png) |
 | 05 | LLE Unrolling the Swiss Roll | 5 | [05_lle_swiss_roll.png](Visuals/05_lle_swiss_roll.png) |
+| 06 | Data Compression via Projection | 1 | [06_data_compression.jpg](Visuals/06_data_compression.jpg) |
+| 07 | Dimensionality Reduction Concept | 1 | [07_dimensionality_reduction.jpg](Visuals/07_dimensionality_reduction.jpg) |
+| 08 | Kernel PCA Concept | 4 | [08_pca_dimension_2.jpg](Visuals/08_pca_dimension_2.jpg) |
 
 ---
 

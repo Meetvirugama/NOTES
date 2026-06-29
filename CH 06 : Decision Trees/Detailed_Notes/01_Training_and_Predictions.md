@@ -93,6 +93,8 @@ $$H_i = - \sum_{k=1, p \neq 0}^n p_{i,k} \log_2(p_{i,k})$$
 *   Gini is slightly faster to compute (it's the default).
 *   When they differ: Gini tends to isolate the most frequent class in its own branch, while Entropy tends to produce slightly more balanced trees.
 
+![Entropy vs Gini Impurity](../Visuals/06_entropy_gini_impurity.jpg)
+
 ---
 
 ## 🔍 4. White Box vs Black Box Models {#concept-4}
