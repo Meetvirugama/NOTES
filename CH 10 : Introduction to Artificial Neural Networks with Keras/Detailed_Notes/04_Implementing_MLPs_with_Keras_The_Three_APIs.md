@@ -26,7 +26,7 @@
 - **Functional API** = free-build LEGO — connect pieces in any creative topology you want
 - **Subclassing API** = design your own LEGO pieces — define exactly what each piece does internally
 
-![Three Keras APIs](../Visuals/20_three_apis_comparison.png)
+![Three Keras APIs](../Visuals/18_three_apis_comparison.png)
 
 > 📊 **Diagram:** Side-by-side visual with code examples, pros/cons, and best-use scenarios for all 3 APIs.
 
@@ -237,10 +237,10 @@ y_pred_main, y_pred_aux = model.predict((X_new_A, X_new_B))
 
 > **TL;DR:** Wide path = memorization (raw features → output directly). Deep path = generalization (features through hidden layers → output). Concatenating both lets the network do both at once.
 
-![Wide & Deep Architecture vs Standard MLP](../Visuals/28_wide_deep_vs_standard_mlp.png)
+![Wide & Deep Architecture vs Standard MLP](../Visuals/20_wide_deep_vs_standard_mlp.png)
 > 📊 **Graph 28:** Architecture comparison: Standard MLP (pure sequential abstraction) vs. Wide & Deep Network (combines direct memorization path with deep generalization path).
 
-![Wide & Deep Architecture](../Visuals/18_wide_deep_architecture.png)
+![Wide & Deep Architecture](../Visuals/21_wide_deep_architecture.png)
 > 📊 **Graph 18:** Wide & Deep Architecture variants. Left = basic Wide & Deep model. Right = Multi-input + Auxiliary output model.
 
 **Why does it work?**
@@ -304,7 +304,7 @@ model = WideAndDeepModel(units=30, activation="relu")
 
 > **For job interviews: know ALL 3. For daily work: Sequential or Functional.**
 
-![Keras API Selection Flowchart](../Visuals/29_keras_api_selection_flowchart.png)
+![Keras API Selection Flowchart](../Visuals/22_keras_api_selection_flowchart.png)
 > 📊 **Graph 29:** Keras API selection decision flowchart. A visual guide to choosing Sequential, Functional, or Subclassing APIs depending on architectural complexity.
 
 | | Sequential | Functional | Subclassing |
@@ -427,5 +427,5 @@ model.fit({"wide_input": X_train_A, "deep_input": X_train_B}, y_train)
 
 ---
 
-**🔗 Previous →** [03 — Regression and Classification MLPs](03_Regression_and_Classification_MLPs.md)
-**🔗 Next →** [05 — Saving, Callbacks, and TensorBoard](05_Functional_and_Subclassing_APIs.md)
+**🔗 Previous →** [03 — Regression and Classification MLPs](03_Regression_and_Classification_MLPs_What_Should_Your_Network_Output.md)
+**🔗 Next →** [05 — Saving, Callbacks, and TensorBoard](05_Saving_Callbacks_and_TensorBoard_Training_Like_a_Pro.md)

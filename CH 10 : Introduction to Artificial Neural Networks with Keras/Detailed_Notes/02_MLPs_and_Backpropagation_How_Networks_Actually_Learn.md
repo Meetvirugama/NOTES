@@ -89,7 +89,7 @@ $$\mathcal{L} = -\frac{1}{N}\sum_{i=1}^{N} \sum_{c=1}^{C} y_{ic} \log(\hat{y}_{i
 
 **Why "Cross-Entropy"?** It punishes **confident wrong answers** exponentially more than uncertain ones.
 
-![Cross-Entropy Intuition](../Visuals/14_cross_entropy_intuition.png)
+![Cross-Entropy Intuition](../Visuals/07_cross_entropy_intuition.png)
 
 > 📊 **Graph:** Left = the loss curve. Right = bar chart comparing loss at different confidence levels. Notice: being 99% wrong gets MASSIVELY punished!
 
@@ -131,14 +131,14 @@ model.compile(loss="binary_crossentropy", optimizer="sgd", metrics=["accuracy"])
 
 ### For Regression Problems
 
-![Loss Functions Comparison](../Visuals/13_loss_functions.png)
+![Loss Functions Comparison](../Visuals/08_loss_functions.png)
 
 > 📊 **Graph:** Left = MSE vs MAE vs Huber plotted. Note how MSE explodes for large errors but MAE stays linear. Right = Cross-entropy curve for reference.
 
 | Loss | Formula | Behavior | When to Use |
 |------|---------|---------|------------|
 | **MSE** | mean((y − ŷ)²) | Squares errors → large errors get MUCH higher penalty | Default regression |
-| **MAE** | mean(|y − ŷ|) | Linear → treats all errors equally | When outliers are present |
+| **MAE** | mean(\|y − ŷ\|) | Linear → treats all errors equally | When outliers are present |
 | **Huber** | MSE for small errors, MAE for large | Best of both | When you have some outliers |
 
 ```python
@@ -171,7 +171,7 @@ You're blindfolded on a hilly mountain, trying to find the valley:
 
 The **gradient** tells you which direction is uphill. You go the opposite way.
 
-![Gradient Descent](../Visuals/04_gradient_descent.png)
+![Gradient Descent](../Visuals/09_gradient_descent.png)
 
 > 📊 **Graph:** Three learning rate scenarios — Too High (bounces around or diverges), Just Right (smooth descent), Too Low (barely moves).
 
@@ -205,7 +205,7 @@ Where:
 
 ### Learning Rate — The Most Critical Setting
 
-![LR Finder](../Visuals/06_lr_finder.png)
+![LR Finder](../Visuals/10_lr_finder.png)
 
 > 📊 **Graph:** LR Range Test curve — too small = slow, too large = diverges. Optimal = just before divergence.
 
@@ -237,10 +237,10 @@ A crime was committed (the model made a wrong prediction). Backprop is the detec
 3. Assigns blame (gradient) to each suspect (weight)
 4. The bigger the blame, the bigger the weight update
 
-![Computational Gate Backpropagation Circuit](../Visuals/26_backprop_node_circuit.png)
+![Computational Gate Backpropagation Circuit](../Visuals/11_backprop_node_circuit.png)
 > 📊 **Graph 26:** Step-by-step gate backpropagation circuit (CS231n style). Displays forward inputs/outputs in green, incoming upstream gradient in blue, local derivatives, and final computed downstream gradients in red.
 
-![Backpropagation Flow](../Visuals/05_backpropagation.png)
+![Backpropagation Flow](../Visuals/12_backpropagation.png)
 > 📊 **Graph 05:** Forward pass (green →) computes predictions. Backward pass (red ←) propagates gradients using the chain rule through each layer.
 
 ### The 3-Step Algorithm
@@ -286,7 +286,7 @@ $$\frac{\partial L}{\partial \hat{y}} = \frac{\hat{y} - y}{\hat{y}(1 - \hat{y})}
 $$\frac{\partial \hat{y}}{\partial h} = \hat{y}(1 - \hat{y})$$
 
 **Step 3: Gradient through ReLU:**
-$$\frac{\partial h}{\partial z} = \begin{cases} 1 & \text{if } z > 0 \\ 0 & \text{if } z \leq 0 \end{cases}$$
+$$\frac{\partial h}{\partial z} = \begin{cases} 1 & \text{if } z > 0 \\\\ 0 & \text{if } z \leq 0 \end{cases}$$
 
 **Step 4: Gradient w.r.t. weight:**
 $$\frac{\partial z}{\partial w} = x$$
@@ -325,7 +325,7 @@ Weight increased slightly → model now predicts higher probability for this inp
 
 > **TL;DR:** In deep networks, gradients can shrink to near-zero (vanishing) or grow to infinity (exploding) as they flow backward. Both prevent the network from learning properly.
 
-![Gradient Flow](../Visuals/07_gradient_flow.png)
+![Gradient Flow](../Visuals/13_gradient_flow.png)
 
 > 📊 **Graph:** Log-scale gradient magnitude across 10 layers. Sigmoid (red) vanishes to near-zero by layer 3. ReLU (green) stays healthy throughout.
 
@@ -370,7 +370,7 @@ optimizer = tf.keras.optimizers.SGD(clipvalue=0.5) # clip each gradient componen
 
 ### Training Curves — What to Watch For
 
-![Training Curves](../Visuals/03_training_curves.png)
+![Training Curves](../Visuals/14_training_curves.png)
 
 > 📊 **Graph:** Three training scenarios — Good (both curves decline together), Overfitting (train keeps going down, val goes up), Diverging (unstable, increasing loss).
 
@@ -475,5 +475,5 @@ optimizer = tf.keras.optimizers.SGD(clipvalue=0.5) # clip each gradient componen
 
 ---
 
-**🔗 Previous →** [01 — Biological to Artificial Neurons](01_Biological_to_Artificial_Neurons.md)
-**🔗 Next →** [03 — Regression and Classification MLPs](03_Regression_and_Classification_MLPs.md)
+**🔗 Previous →** [01 — Biological to Artificial Neurons](01_From_Biological_Neurons_to_Artificial_Neural_Networks.md)
+**🔗 Next →** [03 — Regression and Classification MLPs](03_Regression_and_Classification_MLPs_What_Should_Your_Network_Output.md)

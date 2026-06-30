@@ -92,7 +92,7 @@ Layer 3: Combines those into high-level features (faces, cars)
 
 For complex tasks, you rarely train from scratch. You reuse the lower layers of a network trained on a massive dataset (like ImageNet).
 
-![Transfer Learning](../Visuals/24_transfer_learning.png)
+![Transfer Learning](../Visuals/26_transfer_learning.png)
 
 > 📊 **Graph:** Left: Pretrained network (e.g. MobileNetV2 trained on ImageNet). Right: Target model with frozen base layers (❄️) and a new trainable classification head (🔥).
 
@@ -145,7 +145,7 @@ You cannot recover 100 dimensions of info once it is squeezed through a 2D bottl
 
 ### Neurons vs. Layers: Where to Spend Your Parameter Budget?
 
-![Neurons vs Layers](../Visuals/25_neurons_vs_layers.png)
+![Neurons vs Layers](../Visuals/27_neurons_vs_layers.png)
 
 > 📊 **Graph:** Comparison of a Wide, Shallow Network (1 hidden layer, 70 neurons) vs. a Deep, Narrow Network (3 hidden layers, 15 neurons each). Both use a budget of ~630 parameters, but the deep architecture reaches higher accuracy.
 
@@ -188,7 +188,7 @@ To locate the optimal learning rate:
 2. Slowly multiply the rate at each iteration, ramping up to a high rate (e.g., $10$).
 3. Plot the loss against the learning rate.
 
-![LR Finder](../Visuals/06_lr_finder.png)
+![LR Finder](../Visuals/10_lr_finder.png)
 
 > 📊 **Graph:** Learning Rate Range Test curve. The optimal learning rate is located in the middle of the steepest descent region (slightly below the point where the loss curve bottom out and begins to rise).
 
@@ -229,7 +229,7 @@ Optimizers affect training speed and generalization.
 
 ### Optimizer Comparison
 
-![Hyperparameter Effects](../Visuals/08_hyperparameter_effects.png)
+![Hyperparameter Effects](../Visuals/28_hyperparameter_effects.png)
 
 > 📊 **Graph:** Hyperparameter sensitivity showing convergence behavior of different optimizers.
 
@@ -453,7 +453,7 @@ Here is a summary of default configurations for multi-layer perceptrons:
 
 ### Dashboard View of the Chapter
 
-![Summary Dashboard](../Visuals/10_summary_dashboard.png)
+![Summary Dashboard](../Visuals/29_summary_dashboard.png)
 
 > 📊 **Graph:** Summary dashboard visualizing activations, gradient updates, learning curves, confusion matrix trends, and key hyperparameter relations.
 
@@ -558,5 +558,5 @@ Here is a summary of default configurations for multi-layer perceptrons:
 
 ---
 
-**🔗 Previous Module →** [06_Saving_Callbacks_TensorBoard.md](06_Saving_Callbacks_TensorBoard.md)  
-**🔗 Back to Start →** [01_Biological_to_Artificial_Neurons.md](01_Biological_to_Artificial_Neurons.md)
+**🔗 Previous Module →** [06 — Hyperparameter Search with Scikit-Learn](06_Scikit_Learn_Integration_and_Hyperparameter_Tuning_Workflow.md)  
+**🔗 Back to Start →** [01 — Biological to Artificial Neurons](01_From_Biological_Neurons_to_Artificial_Neural_Networks.md)

@@ -137,7 +137,7 @@ class = 1  (because 0.73 > 0.5 threshold)
 
 ### Decision Boundary Visualization
 
-![Binary Decision Boundary](../Visuals/17_binary_decision_boundary.png)
+![Binary Decision Boundary](../Visuals/15_binary_decision_boundary.png)
 
 > 📊 **Graph:** Left = hard threshold at P=0.5. Right = probability gradient (deep green=very confident class 1, deep red=very confident class 0).
 
@@ -200,7 +200,7 @@ Dense(10, Softmax)     ← 10 outputs, one per class
 
 ### Fashion MNIST Dataset — Visual Guide
 
-![Fashion MNIST Grid](../Visuals/15_fashion_mnist_grid.png)
+![Fashion MNIST Grid](../Visuals/16_fashion_mnist_grid.png)
 
 > 📊 **Graph:** All 10 clothing categories. Notice how similar Shirt, T-shirt, and Pullover look — that's why they're commonly confused by the model.
 
@@ -340,7 +340,7 @@ $$\text{Accuracy} = \frac{\text{Correct Predictions}}{\text{Total Predictions}}$
 
 ### Confusion Matrix — Where Exactly Does Your Model Fail?
 
-![Confusion Matrix](../Visuals/16_confusion_matrix.png)
+![Confusion Matrix](../Visuals/17_confusion_matrix.png)
 
 > 📊 **Graph:** Left = raw counts. Right = normalized per true class. Notice the off-diagonal dark cells: Shirt is frequently confused with Pullover and T-shirt (they look similar!).
 
@@ -365,7 +365,7 @@ print(classification_report(y_test, y_pred, target_names=class_names))
 
 | Metric | Formula | Interpretation | When to Use |
 |--------|---------|---------------|------------|
-| **MAE** | mean(|y − ŷ|) | Average error in original units — easy to explain | Default regression metric |
+| **MAE** | mean(\|y − ŷ\|) | Average error in original units — easy to explain | Default regression metric |
 | **MSE** | mean((y − ŷ)²) | Large errors penalized more | When large errors are especially bad |
 | **RMSE** | √MSE | Same units as target, penalizes large errors | Reporting metric |
 | **R²** | 1 − SS_res/SS_tot | 1 = perfect, 0 = as bad as predicting the mean | Proportion of variance explained |
@@ -497,5 +497,5 @@ plt.show()
 
 ---
 
-**🔗 Previous →** [02 — MLPs and Backpropagation](02_MLPs_and_Backpropagation.md)
-**🔗 Next →** [04 — Implementing MLPs with Keras](04_Implementing_MLPs_with_Keras.md)
+**🔗 Previous →** [02 — MLPs and Backpropagation](02_MLPs_and_Backpropagation_How_Networks_Actually_Learn.md)
+**🔗 Next →** [04 — Implementing MLPs with Keras](04_Implementing_MLPs_with_Keras_The_Three_APIs.md)

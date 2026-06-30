@@ -90,7 +90,7 @@ loaded = keras.models.load_model("fashion_model.h5")
 
 ### The Callback Timeline
 
-![Callback Timeline](../Visuals/21_callback_timeline.png)
+![Callback Timeline](../Visuals/23_callback_timeline.png)
 
 > 📊 **Diagram:** Exactly when each callback hook fires during the training loop. `on_epoch_end` is the most important — it's where ModelCheckpoint, EarlyStopping, and TensorBoard all trigger.
 
@@ -195,7 +195,7 @@ print(f"Best model test accuracy: {test_acc:.2%}")
 
 > **TL;DR:** EarlyStopping watches the validation loss. If it doesn't improve for `patience` epochs in a row, training automatically stops. With `restore_best_weights=True`, the model reverts to its best state.
 
-![Early Stopping Annotated](../Visuals/22_early_stopping_annotated.png)
+![Early Stopping Annotated](../Visuals/24_early_stopping_annotated.png)
 
 > 📊 **Graph:** Training and validation loss over 80 epochs. Best epoch ★ marked in gold. Patience window shown in orange. Stop point in red. The gray zone = would have overfit if not stopped.
 
@@ -458,5 +458,5 @@ print([class_names[c] for c in y_pred])
 
 ---
 
-**🔗 Previous →** [04 — Implementing MLPs with Keras](04_Implementing_MLPs_with_Keras.md)
-**🔗 Next →** [06 — Hyperparameter Search with Scikit-Learn](06_Saving_Callbacks_TensorBoard.md)
+**🔗 Previous →** [04 — Implementing MLPs with Keras](04_Implementing_MLPs_with_Keras_The_Three_APIs.md)
+**🔗 Next →** [06 — Hyperparameter Search with Scikit-Learn](06_Scikit_Learn_Integration_and_Hyperparameter_Tuning_Workflow.md)

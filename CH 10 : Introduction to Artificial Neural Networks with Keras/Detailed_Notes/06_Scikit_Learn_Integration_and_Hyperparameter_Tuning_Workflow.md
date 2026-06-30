@@ -165,7 +165,7 @@ keras_clf = KerasClassifier(
 
 > **TL;DR:** Avoid grid search when tuning deep neural networks. Random search covers the hyperparameter search space much more effectively and is computationally faster because it doesn't waste trials on unimportant hyperparameters.
 
-![Grid vs Random vs Bayesian Search](../Visuals/23_grid_vs_random_search.png)
+![Grid vs Random vs Bayesian Search](../Visuals/25_grid_vs_random_search.png)
 
 > 📊 **Graph:** 2D hyperparameter space performance landscape.
 > - **Grid Search (Left)**: Evaluates fixed grid points. If a critical parameter is highly sensitive, grid search completely misses the optimal peak because it's limited to predefined values.
@@ -467,5 +467,5 @@ best_model = tuner.get_best_models(num_models=1)[0]
 
 ---
 
-**🔗 Previous Module →** [05_Functional_and_Subclassing_APIs.md](05_Functional_and_Subclassing_APIs.md)  
-**🔗 Next Module →** [07_Fine_Tuning_Hyperparameters.md](07_Fine_Tuning_Hyperparameters.md)
+**🔗 Previous Module →** [05 — Saving, Callbacks, and TensorBoard](05_Saving_Callbacks_and_TensorBoard_Training_Like_a_Pro.md)  
+**🔗 Next Module →** [07 — Fine-Tuning Hyperparameters](07_Fine_Tuning_Neural_Network_Hyperparameters_The_Complete_Guide.md)

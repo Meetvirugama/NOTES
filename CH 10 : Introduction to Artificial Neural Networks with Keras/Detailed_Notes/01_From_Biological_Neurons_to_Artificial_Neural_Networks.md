@@ -61,7 +61,7 @@ That's EXACTLY how an artificial neuron works:
 
 ### 🤖 Biological → Artificial: Side-by-Side
 
-![Bio vs Artificial Neuron](../Visuals/11_bio_vs_artificial.png)
+![Bio vs Artificial Neuron](../Visuals/01_bio_vs_artificial.png)
 
 > 📊 **Diagram:** Left = biological neuron with labeled parts. Right = artificial neuron with the exact math equivalent of each part.
 
@@ -75,7 +75,7 @@ That's EXACTLY how an artificial neuron works:
 
 ### 🗓️ How We Got Here: ANN History
 
-![ANN History Timeline](../Visuals/09_ann_timeline.png)
+![ANN History Timeline](../Visuals/02_ann_timeline.png)
 
 > 📊 **Timeline:** 80 years of neural network history — from the first math model to ChatGPT.
 
@@ -133,7 +133,7 @@ z = 0.40 + 0.18 + 0.28 + (−0.5) = 0.36
 
 $$z = w_1 x_1 + w_2 x_2 + \cdots + w_n x_n + b = \mathbf{w}^T \mathbf{x} + b$$
 
-$$\hat{y} = \text{step}(z) = \begin{cases} 1 & \text{if } z \geq 0 \\ 0 & \text{if } z < 0 \end{cases}$$
+$$\hat{y} = \text{step}(z) = \begin{cases} 1 & \text{if } z \geq 0 \\\\ 0 & \text{if } z < 0 \end{cases}$$
 
 ### The Learning Rule
 
@@ -153,7 +153,7 @@ $$w_i \leftarrow w_i + \eta \cdot (y - \hat{y}) \cdot x_i$$
 
 > **TL;DR:** A single perceptron can only draw ONE straight line. XOR requires two lines. That's why we need multiple layers.
 
-![XOR Problem](../Visuals/12_xor_problem.png)
+![XOR Problem](../Visuals/03_xor_problem.png)
 
 > 📊 **Graph:** Left: AND is separable with one line ✅. Middle: OR is separable ✅. Right: XOR cannot be separated by any single line ❌.
 
@@ -194,7 +194,7 @@ Information flows in ONE direction: front desk → managers → CEO.
 
 ### The Architecture
 
-![MLP Architecture](../Visuals/02_mlp_architecture.png)
+![MLP Architecture](../Visuals/04_mlp_architecture.png)
 
 > 📊 **Diagram:** Fully-connected MLP with 4 inputs → 5 hidden (ReLU) → 5 hidden (ReLU) → 3 outputs (Softmax). Every node connects to every node in the next layer.
 
@@ -246,12 +246,12 @@ Without them: `Layer3(Layer2(Layer1(x)))` = `Wx + b` (just a single linear funct
 
 With them: each layer can learn **non-linear transformations** → together they can approximate ANY function.
 
-![Activation Functions & Gradient Saturation Zones](../Visuals/27_activation_saturation_regions.png)
+![Activation Functions & Gradient Saturation Zones](../Visuals/05_activation_saturation_regions.png)
 > 📊 **Graph 27:** Activation functions and gradient saturation regions. Shaded areas represent the saturation regions of Sigmoid and Tanh where derivatives drop to near-zero, causing vanishing gradients.
 
 ### All Activation Functions Visualized
 
-![Activation Functions](../Visuals/01_activation_functions.png)
+![Activation Functions](../Visuals/06_activation_functions.png)
 > 📊 **Graph 01:** All 6 activation functions plotted with their output ranges annotated.
 
 ### 1. Step Function (Historical only)
@@ -283,7 +283,7 @@ $$\text{ReLU}(z) = \max(0, z) \quad \text{Output: } [0, +\infty)$$
 - ❌ "Dying ReLU": if a neuron always gets negative input, it permanently outputs 0 and stops learning
 
 ### 5. Leaky ReLU
-$$\text{LeakyReLU}(z) = \begin{cases} z & z > 0 \\ 0.01z & z \leq 0 \end{cases}$$
+$$\text{LeakyReLU}(z) = \begin{cases} z & z > 0 \\\\ 0.01z & z \leq 0 \end{cases}$$
 
 - ✅ Fixes dying ReLU — small negative slope keeps gradients alive
 - Use when ReLU causes problems (many dead neurons)
@@ -464,4 +464,4 @@ LAYER 2:
 
 ---
 
-**🔗 Next Module →** [02 — MLPs and Backpropagation](02_MLPs_and_Backpropagation.md)
+**🔗 Next Module →** [02 — MLPs and Backpropagation](02_MLPs_and_Backpropagation_How_Networks_Actually_Learn.md)
