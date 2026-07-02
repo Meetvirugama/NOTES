@@ -35,22 +35,26 @@ Batch Normalization addresses the problem of **Internal Covariate Shift**—the 
 For a mini-batch $B$ of size $m_B$, the BN layer performs the following calculations:
 
 **1. Compute Mini-batch Mean:**
+
 $$
 \mathbf{\mu}_B = \frac{1}{m_B} \sum_{i=1}^{m_B} \mathbf{x}^{(i)}
 $$
 
 **2. Compute Mini-batch Variance:**
+
 $$
 \mathbf{\sigma}_B^2 = \frac{1}{m_B} \sum_{i=1}^{m_B} (\mathbf{x}^{(i)} - \mathbf{\mu}_B)^2
 $$
 
 **3. Standardize (Zero-Center and Normalize):**
+
 $$
 \hat{\mathbf{x}}^{(i)} = \frac{\mathbf{x}^{(i)} - \mathbf{\mu}_B}{\sqrt{\mathbf{\sigma}_B^2 + \epsilon}}
 $$
     *Where $\epsilon$ (typically $10^{-5}$) is a tiny smoothing term to prevent division by zero.*
 
 **4. Scale and Shift:**
+
 $$
 \mathbf{z}^{(i)} = \mathbf{\gamma} \otimes \hat{\mathbf{x}}^{(i)} + \mathbf{\beta}
 $$
