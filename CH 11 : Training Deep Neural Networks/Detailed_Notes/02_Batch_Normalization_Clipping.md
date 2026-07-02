@@ -34,30 +34,26 @@ Batch Normalization addresses the problem of **Internal Covariate Shift**—the 
 
 For a mini-batch $B$ of size $m_B$, the BN layer performs the following calculations:
 
-1.  **Compute Mini-batch Mean:**
+**1. Compute Mini-batch Mean:**
+$$
+\mathbf{\mu}_B = \frac{1}{m_B} \sum_{i=1}^{m_B} \mathbf{x}^{(i)}
+$$
 
-    $$
-    \mathbf{\mu}_B = \frac{1}{m_B} \sum_{i=1}^{m_B} \mathbf{x}^{(i)}
-    $$
+**2. Compute Mini-batch Variance:**
+$$
+\mathbf{\sigma}_B^2 = \frac{1}{m_B} \sum_{i=1}^{m_B} (\mathbf{x}^{(i)} - \mathbf{\mu}_B)^2
+$$
 
-2.  **Compute Mini-batch Variance:**
-
-    $$
-    \mathbf{\sigma}_B^2 = \frac{1}{m_B} \sum_{i=1}^{m_B} (\mathbf{x}^{(i)} - \mathbf{\mu}_B)^2
-    $$
-
-3.  **Standardize (Zero-Center and Normalize):**
-
-    $$
-    \hat{\mathbf{x}}^{(i)} = \frac{\mathbf{x}^{(i)} - \mathbf{\mu}_B}{\sqrt{\mathbf{\sigma}_B^2 + \epsilon}}
-    $$
+**3. Standardize (Zero-Center and Normalize):**
+$$
+\hat{\mathbf{x}}^{(i)} = \frac{\mathbf{x}^{(i)} - \mathbf{\mu}_B}{\sqrt{\mathbf{\sigma}_B^2 + \epsilon}}
+$$
     *Where $\epsilon$ (typically $10^{-5}$) is a tiny smoothing term to prevent division by zero.*
 
-4.  **Scale and Shift:**
-
-    $$
-    \mathbf{z}^{(i)} = \mathbf{\gamma} \otimes \hat{\mathbf{x}}^{(i)} + \mathbf{\beta}
-    $$
+**4. Scale and Shift:**
+$$
+\mathbf{z}^{(i)} = \mathbf{\gamma} \otimes \hat{\mathbf{x}}^{(i)} + \mathbf{\beta}
+$$
     *Where $\mathbf{\gamma}$ (scale parameter) and $\mathbf{\beta}$ (shift parameter) are learnable parameters of the layer.*
 
 ![BN Flow](../Visuals/04_batch_normalization_flow.png)
@@ -82,9 +78,9 @@ Batch Normalization behaves differently during training than during testing:
 *   We may need to make predictions for single instances, so calculating mini-batch statistics is impossible.
 *   Instead, Keras uses running **Exponential Moving Averages (EMA)** of the means ($\mathbf{\mu}$) and standard deviations ($\mathbf{\sigma}$) tracked during training:
 
-    $$
-    \mathbf{v}_{running} \leftarrow \mathbf{v}_{running} \times \text{momentum} + \mathbf{v}_{batch} \times (1 - \text{momentum})
-    $$
+$$
+\mathbf{v}_{running} \leftarrow \mathbf{v}_{running} \times \text{momentum} + \mathbf{v}_{batch} \times (1 - \text{momentum})
+$$
 *   *The `momentum` hyperparameter is typically set close to 1 (e.g., $0.9$, $0.99$, or $0.999$). Use more 9s for larger datasets and smaller batch sizes.*
 
 ---
