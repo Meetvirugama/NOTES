@@ -35,17 +35,25 @@ Batch Normalization addresses the problem of **Internal Covariate Shift**—the 
 For a mini-batch $B$ of size $m_B$, the BN layer performs the following calculations:
 
 1.  **Compute Mini-batch Mean:**
-    $$\mathbf{\mu}_B = \frac{1}{m_B} \sum_{i=1}^{m_B} \mathbf{x}^{(i)}$$
+    $$
+    \mathbf{\mu}_B = \frac{1}{m_B} \sum_{i=1}^{m_B} \mathbf{x}^{(i)}
+    $$
 
 2.  **Compute Mini-batch Variance:**
-    $$\mathbf{\sigma}_B^2 = \frac{1}{m_B} \sum_{i=1}^{m_B} (\mathbf{x}^{(i)} - \mathbf{\mu}_B)^2$$
+    $$
+    \mathbf{\sigma}_B^2 = \frac{1}{m_B} \sum_{i=1}^{m_B} (\mathbf{x}^{(i)} - \mathbf{\mu}_B)^2
+    $$
 
 3.  **Standardize (Zero-Center and Normalize):**
-    $$\hat{\mathbf{x}}^{(i)} = \frac{\mathbf{x}^{(i)} - \mathbf{\mu}_B}{\sqrt{\mathbf{\sigma}_B^2 + \epsilon}}$$
+    $$
+    \hat{\mathbf{x}}^{(i)} = \frac{\mathbf{x}^{(i)} - \mathbf{\mu}_B}{\sqrt{\mathbf{\sigma}_B^2 + \epsilon}}
+    $$
     *Where $\epsilon$ (typically $10^{-5}$) is a tiny smoothing term to prevent division by zero.*
 
 4.  **Scale and Shift:**
-    $$\mathbf{z}^{(i)} = \mathbf{\gamma} \otimes \hat{\mathbf{x}}^{(i)} + \mathbf{\beta}$$
+    $$
+    \mathbf{z}^{(i)} = \mathbf{\gamma} \otimes \hat{\mathbf{x}}^{(i)} + \mathbf{\beta}
+    $$
     *Where $\mathbf{\gamma}$ (scale parameter) and $\mathbf{\beta}$ (shift parameter) are learnable parameters of the layer.*
 
 ![BN Flow](../Visuals/04_batch_normalization_flow.png)
@@ -69,7 +77,9 @@ Batch Normalization behaves differently during training than during testing:
 ### During Testing (Inference):
 *   We may need to make predictions for single instances, so calculating mini-batch statistics is impossible.
 *   Instead, Keras uses running **Exponential Moving Averages (EMA)** of the means ($\mathbf{\mu}$) and standard deviations ($\mathbf{\sigma}$) tracked during training:
-    $$\mathbf{v}_{running} \leftarrow \mathbf{v}_{running} \times \text{momentum} + \mathbf{v}_{batch} \times (1 - \text{momentum})$$
+    $$
+    \mathbf{v}_{running} \leftarrow \mathbf{v}_{running} \times \text{momentum} + \mathbf{v}_{batch} \times (1 - \text{momentum})
+    $$
 *   *The `momentum` hyperparameter is typically set close to 1 (e.g., $0.9$, $0.99$, or $0.999$). Use more 9s for larger datasets and smaller batch sizes.*
 
 ---
@@ -126,12 +136,16 @@ Gradient clipping is used to limit the maximum magnitude of gradients during bac
 > 📊 **Graph 05:** Geometric effect of clipping. Clip by Value restricts each component independently, which can change the direction of the gradient vector. Clip by Norm rescales the entire vector to limit its magnitude, preserving its original direction.
 
 ### 1. Clip by Value
-$$\mathbf{g}_{clipped} = \min(\text{clipvalue}, \max(-\text{clipvalue}, \mathbf{g}))$$
+$$
+\mathbf{g}_{clipped} = \min(\text{clipvalue}, \max(-\text{clipvalue}, \mathbf{g}))
+$$
 *   **Behavior:** Checks every element of the gradient vector independently. If a single parameter's gradient exceeds the threshold, it is cut down.
 *   **Drawback:** Can change the orientation of the gradient vector (e.g., if gradient is $[0.9, 100.0]$ and we clip to $1.0$, it becomes $[0.9, 1.0]$, rotating its direction towards a $45^\circ$ diagonal).
 
 ### 2. Clip by Norm
-$$\mathbf{g}_{clipped} = \mathbf{g} \cdot \frac{\text{clipnorm}}{\max(\text{clipnorm}, \|\mathbf{g}\|_2)}$$
+$$
+\mathbf{g}_{clipped} = \mathbf{g} \cdot \frac{\text{clipnorm}}{\max(\text{clipnorm}, \|\mathbf{g}\|_2)}
+$$
 *   **Behavior:** Checks the $\ell_2$ norm of the entire gradient vector. If the norm exceeds the threshold, the entire vector is scaled down.
 *   **Benefit:** Preserves the direction of the gradient vector (e.g., $[0.9, 100.0]$ becomes $[0.009, 1.0]$ under `clipnorm=1.0`).
 
