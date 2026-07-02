@@ -171,10 +171,11 @@ layer = keras.layers.Dense(300, activation="selu",
 $$\text{ReLU}(z) = \max(0, z)$$
 
 ```
-     |  /
-      | /
-─────|/─────── z
-     0
+       |    /
+       |   /
+       |  /
+───────|/─────── z
+       0
 ```
 
 ![Dying ReLU Problem](../Visuals/03_dying_relu.png)
@@ -186,7 +187,12 @@ $$\text{ReLU}(z) = \max(0, z)$$
 
 ### 2. Leaky ReLU — Prevents Dying
 
-$$\text{LeakyReLU}_\alpha(z) = \begin{cases} z & \text{if } z > 0 \\ \alpha z & \text{if } z \leq 0 \end{cases} \quad (\alpha \text{ typically } 0.01 \text{ to } 0.3)$$
+$$
+\text{LeakyReLU}_\alpha(z) = \begin{cases} 
+z & \text{if } z > 0 \\ 
+\alpha z & \text{if } z \leq 0 
+\end{cases} \quad (\alpha \text{ typically } 0.01 \text{ to } 0.3)
+$$
 
 - ✅ Small slope for z<0 → neurons can't die
 - **Variants:**
@@ -205,16 +211,21 @@ model = keras.models.Sequential([
 
 ### 3. ELU — Exponential Linear Unit (Clevert et al., 2015)
 
-$$\text{ELU}_\alpha(z) = \begin{cases} z & \text{if } z \geq 0 \\ \alpha(e^z - 1) & \text{if } z < 0 \end{cases}$$
+$$
+\text{ELU}_\alpha(z) = \begin{cases} 
+z & \text{if } z \geq 0 \\ 
+\alpha(e^z - 1) & \text{if } z < 0 
+\end{cases}
+$$
 
 With default $\alpha = 1$:
 
 ```
-     |  /
-     | /
-─────|/─────── z
-  ___/          ← smooth curve, not hard zero
--1
+       |    /
+       |   /
+───────|/─────── z
+    ___/        ← smooth curve, not hard zero
+  -1
 ```
 
 **Advantages over ReLU:**
@@ -288,16 +299,24 @@ model.add(keras.layers.Dense(10, activation="softmax"))
 **For a mini-batch B of size $m_B$ with input $\mathbf{x}$:**
 
 **Step 1: Compute batch mean**
-$$\boldsymbol{\mu}_B = \frac{1}{m_B} \sum_{i=1}^{m_B} \mathbf{x}^{(i)}$$
+$$
+\boldsymbol{\mu}_B = \frac{1}{m_B} \sum_{i=1}^{m_B} \mathbf{x}^{(i)}
+$$
 
 **Step 2: Compute batch variance**
-$$\boldsymbol{\sigma}_B^2 = \frac{1}{m_B} \sum_{i=1}^{m_B} \left(\mathbf{x}^{(i)} - \boldsymbol{\mu}_B\right)^2$$
+$$
+\boldsymbol{\sigma}_B^2 = \frac{1}{m_B} \sum_{i=1}^{m_B} \left(\mathbf{x}^{(i)} - \boldsymbol{\mu}_B\right)^2
+$$
 
 **Step 3: Normalize**
-$$\hat{\mathbf{x}}^{(i)} = \frac{\mathbf{x}^{(i)} - \boldsymbol{\mu}_B}{\sqrt{\boldsymbol{\sigma}_B^2 + \varepsilon}} \quad (\varepsilon \approx 10^{-5} \text{ for numerical stability})$$
+$$
+\hat{\mathbf{x}}^{(i)} = \frac{\mathbf{x}^{(i)} - \boldsymbol{\mu}_B}{\sqrt{\boldsymbol{\sigma}_B^2 + \varepsilon}} \quad (\varepsilon \approx 10^{-5} \text{ for numerical stability})
+$$
 
 **Step 4: Scale and shift (learnable!)**
-$$\mathbf{z}^{(i)} = \boldsymbol{\gamma} \otimes \hat{\mathbf{x}}^{(i)} + \boldsymbol{\beta}$$
+$$
+\mathbf{z}^{(i)} = \boldsymbol{\gamma} \otimes \hat{\mathbf{x}}^{(i)} + \boldsymbol{\beta}
+$$
 
 Where:
 - $\boldsymbol{\gamma}$ (gamma) = learned scale parameter (initialized to 1)
@@ -310,11 +329,17 @@ Where:
 
 During inference, mini-batches don't exist. BN uses the **exponential moving averages** computed during training:
 
-$$\hat{\boldsymbol{\mu}} \leftarrow \hat{\boldsymbol{\mu}} \times \text{momentum} + \boldsymbol{\mu}_B \times (1 - \text{momentum})$$
-$$\hat{\boldsymbol{\sigma}}^2 \leftarrow \hat{\boldsymbol{\sigma}}^2 \times \text{momentum} + \boldsymbol{\sigma}_B^2 \times (1 - \text{momentum})$$
+$$
+\hat{\boldsymbol{\mu}} \leftarrow \hat{\boldsymbol{\mu}} \times \text{momentum} + \boldsymbol{\mu}_B \times (1 - \text{momentum})
+$$
+$$
+\hat{\boldsymbol{\sigma}}^2 \leftarrow \hat{\boldsymbol{\sigma}}^2 \times \text{momentum} + \boldsymbol{\sigma}_B^2 \times (1 - \text{momentum})
+$$
 
 Then at test time:
-$$\hat{\mathbf{x}} = \frac{\mathbf{x} - \hat{\boldsymbol{\mu}}}{\sqrt{\hat{\boldsymbol{\sigma}}^2 + \varepsilon}}, \quad \mathbf{z} = \boldsymbol{\gamma} \otimes \hat{\mathbf{x}} + \boldsymbol{\beta}$$
+$$
+\hat{\mathbf{x}} = \frac{\mathbf{x} - \hat{\boldsymbol{\mu}}}{\sqrt{\hat{\boldsymbol{\sigma}}^2 + \varepsilon}}, \quad \mathbf{z} = \boldsymbol{\gamma} \otimes \hat{\mathbf{x}} + \boldsymbol{\beta}
+$$
 
 > 💡 **Momentum default is 0.99** (more 9s for larger datasets). The BN layer behaves differently during training vs. inference!
 
