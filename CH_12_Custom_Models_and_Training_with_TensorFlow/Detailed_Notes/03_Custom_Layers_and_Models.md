@@ -1,67 +1,107 @@
 # 🏗️ Module 3: Custom Layers and Models
-> **Ch. 12 — Hands-On ML with Scikit-Learn, Keras & TensorFlow (Aurélien Géron)**
+> **Ch. 12 — Hands-On ML with Scikit-Learn, Keras & TensorFlow**
+> **Rewritten: Plain English → Real Numbers → Code → Why It Matters**
 
 ---
 
 ## 📌 Table of Contents
-1. [Start Here: The Big Picture](#big-picture)
-2. [Custom Stateless Layers](#stateless-layers)
-3. [Custom Stateful Layers (with Weights)](#stateful-layers)
-4. [Layers with Multiple Inputs and Outputs](#multi-io-layers)
-5. [Custom Models: Subclassing tf.keras.Model](#custom-models)
-6. [Losses and Metrics Based on Model Internals](#internal-losses)
-7. [Common Beginner Mistakes](#mistakes)
-8. [Interview Q&A](#interview)
-9. [⚡ One-Page Flash Card](#revision)
+1. [The Big Picture: When Do You Need Custom Layers?](#big-picture)
+2. [Stateless Layers (No Weights)](#stateless-layers)
+3. [Stateful Layers (With Learnable Weights)](#stateful-layers)
+4. [The build() vs. __init__() Distinction (Critical!)](#build-vs-init)
+5. [Layers with Multiple Inputs/Outputs](#multi-io)
+6. [Custom Models (Subclassing keras.Model)](#custom-models)
+7. [Internal Losses (self.add_loss)](#internal-losses)
+8. [Common Mistakes (Wrong vs. Right)](#mistakes)
+9. [How It All Connects](#connects)
+10. [Flash Card](#flashcard)
 
 ---
 
-## 🌍 Start Here: The Big Picture {#big-picture}
+## 🌍 1. The Big Picture: When Do You Need Custom Layers? {#big-picture}
 
-> **TL;DR:** When standard dense, convolutional, or recurrent layers are not enough, TensorFlow allows you to build custom building blocks. You can create stateless layers (e.g. math operations), stateful layers (e.g. layers containing learnable weights), and complete model subclasses containing dynamic forward execution logic (loops and branches).
+Keras has many built-in layers: `Dense`, `Conv2D`, `LSTM`, `Dropout`, etc.
 
-**The Real-World Analogy 🍕:**
-Imagine you are building a custom house using Lego blocks.
-Most of the time, standard bricks (Dense, Conv2D, Dropout layers) work fine.
-But sometimes, you need a highly specialized piece—like a custom structural hinge (a Custom Layer that computes weights in a specific way) or an entire smart home automation hub (a Custom Model that routes power and data dynamically depending on weather sensors). 
-Creating custom layers and models lets you define the physics of these components and assemble them into a unified, modular architecture.
+**Use a custom layer when:**
+- Your computation doesn't exist as a built-in
+- You need learnable weights with a custom formula
+- You're implementing a research paper's novel architecture
+
+**Three levels of customization:**
+
+```
+Level 1: Stateless Layer (no weights, just math)
+         → tf.keras.layers.Lambda(lambda x: tf.exp(x))
+
+Level 2: Stateful Layer (has learnable weights)
+         → Subclass keras.layers.Layer, implement build() and call()
+
+Level 3: Custom Model (multiple layers, dynamic routing)
+         → Subclass keras.Model, implement call() with Python logic
+```
+
+### 🏠 The LEGO Analogy
+
+Standard Keras layers are like pre-made LEGO bricks. Most of the time they work. But if you need a custom curved brick that doesn't exist in the set, you have to design and mold your own. Custom layers are your mold.
 
 ---
 
-## 🔍 1. Custom Stateless Layers {#stateless-layers}
+## 🔍 2. Stateless Layers (No Weights) {#stateless-layers}
 
-If you want to create a layer that performs basic mathematical operations without maintaining any learnable weights, you can write a simple function and wrap it in a `tf.keras.layers.Lambda` layer.
+A **stateless** layer just applies a math function — no learnable parameters.
 
 ```python
 import tensorflow as tf
 from tensorflow import keras
 
-# An exponential layer: y = exp(x)
+# Exponential layer: output = e^input
 exponential_layer = keras.layers.Lambda(lambda x: tf.exp(x))
 
-# Usage inside a Sequential model
+# Used in a model:
 model = keras.models.Sequential([
     keras.layers.Dense(30, activation="relu"),
-    exponential_layer
+    exponential_layer        # applies exp() to all outputs
 ])
 ```
 
+### 🔢 What It Does with Numbers
+
+```
+Dense output: [0.5, -1.2, 2.1, 0.0]
+
+After exponential_layer (e^x):
+  e^0.5  = 1.649
+  e^-1.2 = 0.301
+  e^2.1  = 8.166
+  e^0.0  = 1.000
+
+Layer output: [1.649, 0.301, 8.166, 1.000]
+```
+
+**When to use Lambda:** Quick, one-line transformations. For anything more complex (needs weights, needs saving), use a proper subclass.
+
 ---
 
-## 🏗️ 2. Custom Stateful Layers (with Weights) {#stateful-layers}
+## 🏗️ 3. Stateful Layers (With Learnable Weights) {#stateful-layers}
 
-To create a layer that holds trainable weights, you must inherit from `tf.keras.layers.Layer` and implement the following methods:
+A **stateful** layer has learnable parameters (like `Dense` — it has a weight matrix and a bias).
 
-![Custom Layer Lifecycle](../Visuals/05_custom_layer_structure.png)
-> 📊 **Graph 05:** Lifecycle of a custom stateful layer. Delayed weight allocation inside `build()` ensures the layer automatically configures itself when it receives inputs of any dimension.
+**You must implement these 4 methods:**
 
-* `__init__(self, units, activation=None, **kwargs)`: Store hyperparameters.
-* `build(self, input_shape)`: Allocate weights using `self.add_weight()`. Defining weights here guarantees Keras can inspect input shapes dynamically.
-* `call(self, inputs)`: Perform the mathematical forward pass.
-* `compute_output_shape(self, input_shape)`: Return the shape of the output tensor.
-* `get_config(self)`: Serialize hyperparameters.
+![Custom Layer Structure](../Visuals/05_custom_layer_structure.png)
 
-### Implementation: A Custom Dense Layer
+| Method | When Called | Purpose |
+|--------|------------|---------|
+| `__init__()` | When you write `MyLayer(30)` | Save hyperparameters (units, activation) |
+| `build(input_shape)` | First time data flows through | Create weight tensors (W, b) |
+| `call(inputs)` | Every forward pass | The actual computation |
+| `get_config()` | When saving model | Serialize hyperparameters |
+
+### 🔢 Building a Custom Dense Layer from Scratch
+
+A normal `Dense` layer computes: `output = activation(input @ W + b)`
+
+Let's build one manually:
 
 ```python
 class MyDense(keras.layers.Layer):
@@ -71,186 +111,394 @@ class MyDense(keras.layers.Layer):
         self.activation = keras.activations.get(activation)
 
     def build(self, input_shape):
-        # input_shape[-1] gives the feature dimension of the input
-        self.kernel = self.add_weight(
-            name="kernel",
+        # input_shape[-1] = number of input features
+        # W shape: (n_inputs, n_outputs)
+        self.W = self.add_weight(
+            name="weights",
             shape=[input_shape[-1], self.units],
-            initializer="glorot_uniform",
-            trainable=True
+            initializer="glorot_uniform"
         )
-        self.bias = self.add_weight(
+        # b shape: (n_outputs,)
+        self.b = self.add_weight(
             name="bias",
             shape=[self.units],
-            initializer="zeros",
-            trainable=True
+            initializer="zeros"
         )
-        super().build(input_shape) # Must call super().build() at the end
+        super().build(input_shape)    # marks layer as "built"
 
     def call(self, inputs):
-        # Linear activation logic: y = Wx + b
-        result = tf.matmul(inputs, self.kernel) + self.bias
-        return self.activation(result) if self.activation is not None else result
-
-    def compute_output_shape(self, input_shape):
-        # Retain batch dimension (axis 0), replace feature dimension with units
-        return tf.TensorShape([input_shape[0], self.units])
+        return self.activation(inputs @ self.W + self.b)
 
     def get_config(self):
-        base_config = super().get_config()
-        return {
-            **base_config,
-            "units": self.units,
-            "activation": keras.activations.serialize(self.activation)
-        }
+        return {**super().get_config(),
+                "units": self.units,
+                "activation": keras.activations.serialize(self.activation)}
+```
+
+### 🔢 Forward Pass With Real Numbers
+
+```
+Input: 2 samples, 3 features each
+X = [[1.0, 2.0, 3.0],
+     [4.0, 5.0, 6.0]]
+Shape: (2, 3)
+
+Layer: MyDense(2) — 3 inputs, 2 output units
+
+W (3×2, initialized):          b (1×2, zeros):
+[[0.5, -0.3],                  [0.0, 0.0]
+ [0.2,  0.4],
+ [-0.1, 0.6]]
+
+Computation: X @ W + b
+
+Sample 1: [1,2,3] @ W + b
+  unit 1: 1×0.5 + 2×0.2 + 3×(-0.1) + 0 = 0.5 + 0.4 - 0.3 = 0.6
+  unit 2: 1×(-0.3) + 2×0.4 + 3×0.6 + 0 = -0.3 + 0.8 + 1.8 = 2.3
+
+Sample 2: [4,5,6] @ W + b
+  unit 1: 4×0.5 + 5×0.2 + 6×(-0.1) = 2.0 + 1.0 - 0.6 = 2.4
+  unit 2: 4×(-0.3) + 5×0.4 + 6×0.6 = -1.2 + 2.0 + 3.6 = 4.4
+
+Output (before activation):
+[[0.6, 2.3],
+ [2.4, 4.4]]
 ```
 
 ---
 
-## 🔀 3. Layers with Multiple Inputs and Outputs {#multi-io-layers}
+## 🔑 4. The build() vs. __init__() Distinction (Critical!) {#build-vs-init}
 
-If your layer takes multiple inputs (e.g. two separate tensor paths) or returns multiple outputs, the `call()` method must accept and return tuples:
+**The question:** Why create weights in `build()` instead of `__init__()`?
+
+**The answer:** When you write `MyDense(30)`, you don't know yet how many input features there will be. You only know that when real data flows through. `build()` is called the first time data arrives, so it can use `input_shape[-1]` dynamically.
+
+### 🔢 Wrong Way: Hardcoding in __init__
 
 ```python
-class MultiIO(keras.layers.Layer):
-    def call(self, inputs):
-        # Expects a tuple of inputs: (X1, X2)
-        X1, X2 = inputs
-        # Returns a tuple of outputs: sum, difference
-        return X1 + X2, X1 - X2
+# ❌ WRONG
+class MyDense(keras.layers.Layer):
+    def __init__(self, units, n_inputs, **kwargs):
+        super().__init__(**kwargs)
+        self.W = self.add_weight(shape=[n_inputs, units])  # hardcoded!
+        self.b = self.add_weight(shape=[units])
 
-    def compute_output_shape(self, input_shape):
-        # input_shape is a tuple of shapes
-        shape1, shape2 = input_shape
-        return [shape1, shape1] # Both outputs share the shape of shape1
+# Problem: You have to know n_inputs when you create the layer.
+# This breaks if you reuse the layer with different input sizes.
+layer = MyDense(30, n_inputs=10)   # rigid, inflexible
+```
+
+```python
+# ✅ RIGHT — input shape is detected automatically
+class MyDense(keras.layers.Layer):
+    def __init__(self, units, **kwargs):
+        super().__init__(**kwargs)
+        self.units = units
+
+    def build(self, input_shape):
+        # input_shape is passed automatically when first call happens
+        self.W = self.add_weight(shape=[input_shape[-1], self.units])
+        self.b = self.add_weight(shape=[self.units])
+
+layer = MyDense(30)    # flexible, works with any input size ✅
+```
+
+### Timeline of what happens:
+
+![Build vs Init Timeline](../Visuals/16_build_vs_init_timeline.png)
+
+```
+1. You write: layer = MyDense(30)
+   → __init__() runs: saves self.units = 30
+   → NO weights yet (input size unknown)
+
+2. You write: model(X_batch)  ← first time with X of shape (32, 10)
+   → build(input_shape=(32, 10)) runs: creates W shape (10,30), b shape (30,)
+   → layer.built = True
+
+3. Every subsequent: model(X_batch)
+   → build() is SKIPPED (already built)
+   → call(inputs) runs the forward pass
 ```
 
 ---
 
-## 🏗️ 4. Custom Models: Subclassing tf.keras.Model {#custom-models}
+## 🔀 5. Layers with Multiple Inputs/Outputs {#multi-io}
 
-To construct custom model architectures containing custom layers, you inherit from `tf.keras.Model`. Define sub-layers in `__init__()` and implement the forward path execution logic inside `call(inputs)`.
+Some layers take two inputs (like an attention layer combining query + context), or return multiple outputs.
 
-![Custom Model with Residual Block](../Visuals/06_residual_block_custom_model.png)
-> 📊 **Graph 06:** Subclassed Model with custom `ResidualBlock` layer. The input passes through a main path (Dense Layers) and an identity bypass path before being added.
+### 🔢 Example: A layer that takes two inputs
 
-### Implementation: Subclassed Residual Network
+```
+Purpose: combine two student score arrays
+Input A: [Math, Science] = [85, 90]
+Input B: [Lab, Project]  = [70, 80]
+
+Output 1 (sum):  [85+70, 90+80] = [155, 170]
+Output 2 (diff): [85-70, 90-80] = [15,  10]
+```
+
+```python
+class MergeLayer(keras.layers.Layer):
+    def call(self, inputs):
+        A, B = inputs            # unpack the tuple of inputs
+        return A + B, A - B      # return a tuple of outputs
+
+# Usage:
+layer = MergeLayer()
+A = tf.constant([[85., 90.]])
+B = tf.constant([[70., 80.]])
+sum_out, diff_out = layer((A, B))
+print(sum_out.numpy())    # [[155. 170.]]
+print(diff_out.numpy())   # [[ 15.  10.]]
+```
+
+---
+
+## 🏗️ 6. Custom Models (Subclassing keras.Model) {#custom-models}
+
+When you need **dynamic logic** in the forward pass — loops, branches, conditional paths — use `keras.Model` subclassing.
+
+**The most famous example: Residual connections (Skip connections)**
+
+### What is a residual connection?
+
+![Residual Block Custom Model](../Visuals/06_residual_block_custom_model.png)
+
+```
+Normal layer:          output = f(input)
+Residual connection:   output = f(input) + input    ← ADD THE INPUT BACK!
+```
+
+**Why is this useful?** In very deep networks, gradients can vanish (become nearly zero) by the time they reach early layers. Adding the input directly creates a "shortcut highway" for gradients to flow back without shrinking.
+
+### 🔢 Residual Block Worked Example
+
+```
+Input to block: [1.0, 2.0, 3.0]
+
+Dense layer computes: [-0.2, 0.5, 0.8]   (simplified)
+
+Residual output = Dense_output + original_input
+               = [-0.2 + 1.0, 0.5 + 2.0, 0.8 + 3.0]
+               = [0.8, 2.5, 3.8]
+
+The gradient now flows both through Dense AND directly through the shortcut.
+This is why ResNets can have 50, 100, even 1000 layers without vanishing gradients!
+```
 
 ```python
 class ResidualBlock(keras.layers.Layer):
     def __init__(self, units, **kwargs):
         super().__init__(**kwargs)
-        self.hidden = keras.layers.Dense(units, activation="elu", kernel_initializer="he_normal")
+        self.dense = keras.layers.Dense(units, activation="relu")
 
     def call(self, inputs):
-        # Main path computes Dense output; bypass path adds inputs directly
-        return inputs + self.hidden(inputs)
+        # Main path: through the dense layer
+        main_output = self.dense(inputs)
+        # Skip connection: add original inputs back
+        return main_output + inputs   # requires inputs and main_output have same shape!
 
     def get_config(self):
-        # No custom params besides defaults, but good practice
         return super().get_config()
 
 
 class ResidualRegressor(keras.Model):
     def __init__(self, output_dim, **kwargs):
         super().__init__(**kwargs)
-        self.hidden1 = keras.layers.Dense(30, activation="elu", kernel_initializer="he_normal")
-        self.block1 = ResidualBlock(30)
-        self.block2 = ResidualBlock(30)
-        self.out_layer = keras.layers.Dense(output_dim)
+        self.hidden1 = keras.layers.Dense(30, activation="relu")
+        self.block1  = ResidualBlock(30)    # skip connection block
+        self.block2  = ResidualBlock(30)    # second skip connection block
+        self.output_layer = keras.layers.Dense(output_dim)
 
     def call(self, inputs):
-        x = self.hidden1(inputs)
-        x = self.block1(x)
-        # Skip connection routing through multiple blocks
-        x = self.block2(x)
-        return self.out_layer(x)
+        x = self.hidden1(inputs)    # first transformation
+        x = self.block1(x)          # + skip
+        x = self.block2(x)          # + skip again
+        return self.output_layer(x)
+```
+
+### 🔢 Forward Pass Through the Full Model
+
+```
+Input: [1.0, 0.5, -0.3, ...]  (some feature vector)
+       ↓ hidden1 (Dense, 30 units, relu)
+       [0.4, 1.2, 0.0, 0.7, ...]  (shape: 30)
+       ↓ block1 (Dense + skip)
+       main: [0.2, 0.9, 0.1, 0.6, ...]
+       skip: [0.4, 1.2, 0.0, 0.7, ...]  ← the original input to this block
+       sum:  [0.6, 2.1, 0.1, 1.3, ...]  (shape: 30)
+       ↓ block2 (same thing again)
+       ...
+       ↓ output_layer (Dense, 1 unit)
+       [4.2]  ← final prediction
 ```
 
 ---
 
-## 📈 5. Losses and Metrics Based on Model Internals {#internal-losses}
+## 📈 7. Internal Losses (self.add_loss) {#internal-losses}
 
-Sometimes, a loss or metric depends on the internal state of layers rather than just comparing $y_{true}$ and $y_{pred}$ (e.g. variational autoencoder KL divergence, or reconstruction losses).
-You can compute these values inside `call()` and register them by calling `self.add_loss()` or `self.add_metric()`.
+Sometimes a layer wants to add its own penalty to the total loss — not based on predictions vs. targets, but based on its own internal state.
 
-### Implementation: Reconstruction Regressor
+**Example: Reconstruction regularization**
+
+The idea: Force a hidden layer to be able to reconstruct its input. This makes the hidden representation more informative.
 
 ```python
 class ReconstructionRegressor(keras.Model):
     def __init__(self, output_dim, **kwargs):
         super().__init__(**kwargs)
-        self.hidden = keras.layers.Dense(30, activation="selu", kernel_initializer="lecun_normal")
+        self.hidden = keras.layers.Dense(30, activation="relu")
         self.out_layer = keras.layers.Dense(output_dim)
 
     def build(self, input_shape):
-        # Create an auxiliary reconstruction layer matching input dimension
-        self.reconstruct_layer = keras.layers.Dense(input_shape[-1])
+        # Reconstruction layer tries to rebuild the original input
+        self.reconstruct = keras.layers.Dense(input_shape[-1])
         super().build(input_shape)
 
     def call(self, inputs):
         hidden = self.hidden(inputs)
-        reconstruction = self.reconstruct_layer(hidden)
-        
-        # Calculate reconstruction error (MSE relative to raw inputs)
-        recon_loss = tf.reduce_mean(tf.square(reconstruction - inputs))
-        # Register loss (multiplied by regularizing weight factor)
-        self.add_loss(0.05 * recon_loss)
-        
+        reconstructed = self.reconstruct(hidden)
+
+        # Penalty: how different is the reconstruction from the original?
+        recon_loss = tf.reduce_mean(tf.square(reconstructed - inputs))
+        self.add_loss(0.05 * recon_loss)   # weighted penalty added to total loss
+
         return self.out_layer(hidden)
 ```
 
----
-
-## ❌ Common Beginner Mistakes {#mistakes}
-
-### 1. Initializing weights inside `__init__()` instead of `build()` ❌
-Instantiating layer weights inside `__init__()` requires you to hardcode the input dimension (e.g., `shape=[10, units]`). If the model receives inputs of a different shape, training will crash.
-> **Fix:** Define weights inside `build(input_shape)`, which extracts the dynamic input dimensions automatically on the first model call.
-
-### 2. Expecting subclassed models to show architecture inside `summary()` ❌
-Subclassed models are dynamic; their execution graph is defined inside the Python interpreter, not statically compiled. Thus, calling `model.summary()` right after instantiation will throw errors or show empty tables because Keras does not yet know the input shape.
-> **Fix:** Build the model by passing dummy data (e.g., `model(tf.zeros([1, 10]))`) or specify an input shape at build time to populate weight summaries.
-
----
-
-## 🎤 Interview Q&A {#interview}
-
-**Q1: What are the trade-offs between the Functional API and Model Subclassing?**
-> **A:** The Functional API provides a static graph architecture. Keras checks shapes, prevents connectivity bugs, and easily serializes and saves models. You can also print the layout using `plot_model()`.
-> Subclassing, on the other hand, provides dynamic execution. You can use conditional loops, variable-sized branches, or arbitrary NumPy functions inside the `call()` method. However, this dynamics turns the model into a black box for Keras: it cannot check shapes, extract intermediate layers, or save easily without custom serialization.
-
-**Q2: What is the difference between a loss added via `compile(loss=...)` and one registered via `self.add_loss()`?**
-> **A:** Compile-time losses are classic supervised objectives that compare predicted outputs to target labels ($y_{pred}$ vs. $y_{true}$). Losses added via `self.add_loss()` represent auxiliary regularizations or internal constraints that depend on layer weights or intermediate activations (e.g., reconstruction error, KL divergence, or sparsity constraints). Keras automatically aggregates all losses added via `self.add_loss()` and adds them to the main loss during the backpropagation step.
-
----
-
-## ⚡ One-Page Flash Card {#revision}
+### 🔢 What add_loss Does
 
 ```
-╔══════════════════════════════════════════════════════════════════╗
-║             MODULE 3 — CUSTOM LAYERS FLASH CARD                  ║
-╠══════════════════════════════════════════════════════════════════╣
-║                                                                  ║
-║  STATEFUL LAYER STRUCTURE:                                       ║
-║  - __init__(): Saves units and config settings.                  ║
-║  - build(input_shape): Allocates weights using self.add_weight() ║
-║  - call(inputs): Mathematical forward execution.                 ║
-║  - compute_output_shape(input_shape): Retain/change dimension.   ║
-║                                                                  ║
-║  API MATRIX:                                                     ║
-║  - Sequential/Functional: Static, checkable, serializable.       ║
-║  - Subclassing: Dynamic (loops/branches), hard to verify,        ║
-║    requires custom config overrides for load/save.               ║
-║                                                                  ║
-║  INTERNAL CONSTRAINTS:                                           ║
-║  - self.add_loss(tensor) -> Registers internal regularization.   ║
-║  - self.add_metric(tensor) -> Tracks internal states.            ║
-╚══════════════════════════════════════════════════════════════════╝
+Suppose main loss (MSE of predictions) = 0.50
+And reconstruction error = 0.30
+Weight = 0.05
+
+Reconstruction penalty = 0.05 × 0.30 = 0.015
+
+Total loss used for backpropagation = 0.50 + 0.015 = 0.515
+                                        ↑              ↑
+                                   from y_pred     from add_loss()
 ```
 
 ---
 
+## ❌ 8. Common Mistakes (Wrong vs. Right) {#mistakes}
+
+### Mistake 1: Creating weights in __init__
+
+```python
+# ❌ WRONG — must know input size upfront
+class MyLayer(keras.layers.Layer):
+    def __init__(self, units, n_inputs, **kwargs):
+        super().__init__(**kwargs)
+        self.W = self.add_weight(shape=[n_inputs, units])
+
+# ✅ RIGHT — input size detected automatically
+class MyLayer(keras.layers.Layer):
+    def __init__(self, units, **kwargs):
+        super().__init__(**kwargs)
+        self.units = units
+
+    def build(self, input_shape):
+        self.W = self.add_weight(shape=[input_shape[-1], self.units])
+```
+
+### Mistake 2: Calling model.summary() before building
+
+```python
+# ❌ WRONG — model not built yet, summary shows nothing
+model = ResidualRegressor(1)
+model.summary()   # ValueError: This model has not yet been built
+
+# ✅ RIGHT — build by passing dummy data first
+model = ResidualRegressor(1)
+model(tf.zeros([1, 10]))   # forces build() to run with shape (1, 10)
+model.summary()            # now shows correct architecture ✅
+```
+
+### Mistake 3: Residual block input/output shape mismatch
+
+```python
+# ❌ WRONG — residual requires same shape for +
+class ResidualBlock(keras.layers.Layer):
+    def __init__(self, units, **kwargs):
+        super().__init__(**kwargs)
+        self.dense = keras.layers.Dense(units)    # units=50
+
+    def call(self, inputs):
+        return self.dense(inputs) + inputs    # ERROR if inputs.shape[-1] != 50!
+
+# ✅ RIGHT — use a projection layer when sizes differ (or keep units the same)
+def call(self, inputs):
+    main = self.dense(inputs)
+    # If input shape != output shape, add a 1x1 conv or linear projection
+    # For same shape, the simple + works:
+    return main + inputs
+```
+
 ---
 
-**🔗 Previous Module →** [02_Custom_Losses_and_Components.md](02_Custom_Losses_and_Components.md)  
+## 🔗 9. How It All Connects {#connects}
+
+```
+BUILDING BLOCKS (left to right = increasing complexity)
+
+Lambda Layer          Stateful Layer          Custom Model
+(no weights)         (has weights)           (dynamic logic)
+     │                     │                      │
+     │                     │                      │
+tf.exp(x)            W, b learned             Multiple layers
+                      via GradientTape         + Python if/loops
+                                               + skip connections
+                                               + add_loss()
+
+ALL of these can be:
+  ├── Used in Sequential model
+  ├── Used in Functional API model
+  ├── Used inside another custom model (composable!)
+  └── Saved/loaded with model using get_config()
+```
+
+---
+
+## ⚡ 10. Flash Card {#flashcard}
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║          MODULE 3 — CUSTOM LAYERS & MODELS FLASH CARD        ║
+╠══════════════════════════════════════════════════════════════╣
+║                                                              ║
+║  STATEFUL LAYER (4 methods):                                 ║
+║    __init__(units, **kwargs): store hyperparams              ║
+║    build(input_shape): add_weight() — called ONCE            ║
+║    call(inputs): the math — called EVERY forward pass        ║
+║    get_config(): serialize hyperparams for saving            ║
+║                                                              ║
+║  WHY build() not __init__()?                                 ║
+║    Input shape unknown until first data flows through.       ║
+║    build() receives input_shape automatically.               ║
+║                                                              ║
+║  RESIDUAL CONNECTION:                                        ║
+║    output = f(x) + x                                         ║
+║    Gradient flows two paths: through f AND directly via x    ║
+║    Solves vanishing gradient in very deep networks           ║
+║                                                              ║
+║  CUSTOM MODEL:                                               ║
+║    Subclass keras.Model                                      ║
+║    Define layers in __init__(), logic in call()              ║
+║    Allows loops, branches, any Python control flow           ║
+║    Tradeoff: harder to inspect/debug than Functional API     ║
+║                                                              ║
+║  INTERNAL LOSS:                                              ║
+║    self.add_loss(penalty_tensor) inside call()               ║
+║    Automatically added to total_loss during training         ║
+║    Use for: reconstruction loss, KL divergence, sparsity     ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
+---
+
+**🔗 Previous Module →** [02_Custom_Losses_and_Components.md](02_Custom_Losses_and_Components.md)
 **🔗 Next Module →** [04_Autodiff_and_Custom_Training_Loops.md](04_Autodiff_and_Custom_Training_Loops.md)

@@ -1,197 +1,515 @@
 # 🕸️ Module 5: TensorFlow Functions and Graphs
-> **Ch. 12 — Hands-On ML with Scikit-Learn, Keras & TensorFlow (Aurélien Géron)**
+> **Ch. 12 — Hands-On ML with Scikit-Learn, Keras & TensorFlow**
+> **Rewritten: Plain English → Real Numbers → Code → Why It Matters**
 
 ---
 
 ## 📌 Table of Contents
-1. [Start Here: The Big Picture](#big-picture)
-2. [Eager vs. Graph Execution](#eager-vs-graph)
-3. [Compiling Functions with @tf.function](#tf-function)
-4. [AutoGraph and Tracing Mechanics](#autograph-tracing)
-5. [Rules for Writing Graph-Compatible Code](#graph-rules)
-6. [Common Beginner Mistakes](#mistakes)
-7. [Interview Q&A](#interview)
-8. [⚡ One-Page Flash Card](#revision)
+1. [Eager vs. Graph: The Core Idea (Plain English)](#eager-vs-graph)
+2. [@tf.function: What It Does and Why](#tf-function)
+3. [How Tracing Works (Step by Step)](#tracing)
+4. [AutoGraph: Python Code → TF Graph Nodes](#autograph)
+5. [When Retracing Happens (The Hidden Trap)](#retracing)
+6. [Rules for Code Inside @tf.function](#rules)
+7. [Common Mistakes (Wrong vs. Right)](#mistakes)
+8. [How It All Connects](#connects)
+9. [Flash Card](#flashcard)
 
 ---
 
-## 🌍 Start Here: The Big Picture {#big-picture}
+## 🌍 1. Eager vs. Graph: The Core Idea (Plain English) {#eager-vs-graph}
 
-> **TL;DR:** While eager execution makes development intuitive and debugging easy, compiling code to static computation graphs is necessary to achieve maximum speed. TensorFlow uses `@tf.function` to parse Python code (via AutoGraph), trace symbolic executions, and compile the code into highly optimized, hardware-portable computation graphs executed in C++.
+### What is "eager execution"?
 
-**The Real-World Analogy 🍕:**
-Imagine you are building a customized skyscraper.
-* **Eager execution** is like building the skyscraper on the fly without a blueprint. You lay down bricks, check how they look, adjust the walls, and add windows as you think of them. This is highly flexible and great for designing a creative layout, but it is extremely slow and disorganized.
-* **Graph execution** is like drafting a complete CAD blueprint (the Computation Graph) first. Once the engineers review the blueprint, they optimize the structure (removing duplicate supports, pooling materials, scheduling builders to work in parallel). The construction crew can then execute the build rapidly and efficiently at the site.
+When you run Python code normally, it executes line by line, immediately:
+
+```python
+x = tf.constant([2.0, 3.0])
+y = x * x      # computed RIGHT NOW, result is [4.0, 9.0]
+print(y)       # you can print it, debug it, check it
+```
+
+This is **eager execution** — operations execute immediately, you get real numbers back. Great for debugging.
+
+### What is "graph execution"?
+
+In graph mode, instead of computing results immediately, TF first builds a **blueprint** (the computation graph), then runs the whole blueprint at once in optimized C++ code.
+
+```
+Eager: Python → op1 → result → Python → op2 → result → Python → ...
+            (back to Python after EACH operation)
+
+Graph: Python builds blueprint → C++ runs ALL ops → returns result to Python
+            (only two trips to/from Python, no matter how many ops)
+```
+
+### Why is Graph Faster?
+
+![Eager vs Graph Callstack](../Visuals/13_eager_vs_graph_callstack.png)
+
+| Optimization | What It Means | Example |
+|-------------|---------------|---------|
+| **Operator Fusion** | Combine consecutive ops into one GPU call | `(x*w) + b` becomes one fused kernel |
+| **Parallel Execution** | Independent ops run simultaneously | Layer 1 and Layer 2 computed in parallel |
+| **Dead Code Elimination** | Remove ops whose output is never used | Unused debug tensors removed |
+| **Portability** | Graph works without Python | Deploy to mobile, browser, C++ server |
+
+### 🔢 Speed Comparison (Real Impact)
+
+```
+Function: f(x) = x³ called 10,000 times
+
+Eager mode:    ~2.1 seconds  (back to Python interpreter each call)
+Graph mode:    ~0.1 seconds  (stays in C++, 20x faster!)
+
+For large models with millions of parameters: 2x-10x speedup typical.
+```
+
+### 🏗️ Analogy: Building a Skyscraper
+
+| Approach | Analogy |
+|----------|---------|
+| **Eager** | Build as you go — lay each brick, check it, then lay the next |
+| **Graph** | Draw the full CAD blueprint first, then execute all at once with parallel crews |
+
+The CAD blueprint approach is slower to set up but much faster to execute (especially when you run the building project 1000 times in training).
 
 ---
 
-## 🏗️ 1. Eager vs. Graph Execution {#eager-vs-graph}
+## 🚀 2. @tf.function: What It Does and Why {#tf-function}
 
-TensorFlow 2.x executes operations in **eager mode** by default. This matches standard Python behavior where results are computed immediately.
-
-However, static **Computation Graphs** are much faster because:
-1. **Operator Fusion**: Fuses multiple adjacent operations (like adding and multiplying matrices) into a single hardware instruction, minimizing GPU RAM transfers.
-2. **Parallel Execution**: Automatically identifies independent paths in the graph and runs them concurrently across CPU threads or GPU cores.
-3. **Dead Code Elimination**: Prunes nodes whose outputs are not used, saving memory and processing power.
-4. **Portability**: The compiled graph is independent of Python. It can be exported and run directly in a C++ server, inside a web browser (TensorFlow.js), or on mobile devices (TensorFlow Lite).
-
-![Eager Mode vs Graph Mode Callstack](../Visuals/13_eager_vs_graph_callstack.png)
-> 📊 **Graph 13:** Callstack comparison of Eager Execution vs. static Graph Execution. Eager mode incurs overhead from returning to the Python interpreter on each operation, whereas Graph mode dispatches execution entirely to C++.
-
----
-
-## 🚀 2. Compiling Functions with @tf.function {#tf-function}
-
-To compile a standard Python function into a TensorFlow computation graph, decorate it with `@tf.function`:
+Adding `@tf.function` above a Python function tells TensorFlow: "compile this into a graph the first time it's called."
 
 ```python
 import tensorflow as tf
 
-# Standard eager function
+# Eager version: runs immediately, one op at a time
 def eager_cube(x):
     return x ** 3
 
-# Graph-compiled function
+# Graph version: compiled and optimized
 @tf.function
 def graph_cube(x):
     return x ** 3
 
-t = tf.constant([2.0, 3.0])
-print("Eager cube:", eager_cube(t))
-# OUTPUT: Eager cube: tf.Tensor([ 8. 27.], shape=(2,), dtype=float32)
-print("Graph cube:", graph_cube(t))
-# OUTPUT: Graph cube: tf.Tensor([ 8. 27.], shape=(2,), dtype=float32)
+t = tf.constant([2.0, 3.0, 4.0])
+print(eager_cube(t).numpy())    # [ 8. 27. 64.]  (computed eagerly)
+print(graph_cube(t).numpy())    # [ 8. 27. 64.]  (same result, but via compiled graph)
 ```
 
-Behind the scenes, `graph_cube` is not returning a standard value from a Python function; it is invoking a compiled `ConcreteFunction` managed by the C++ engine.
+**Same result, but graph_cube is faster** because:
+1. First call: TF traces the function (builds the graph). This takes a moment.
+2. All subsequent calls: TF runs the pre-built graph directly (skips Python entirely).
+
+### When Should You Use @tf.function?
+
+```
+✅ Add @tf.function when:
+   - Function is called many times (training steps, inference loops)
+   - Function contains lots of tensor operations
+   - Performance matters (production, training large models)
+
+❌ Don't need @tf.function when:
+   - Debugging (eager is easier to debug)
+   - Function contains Python side-effects (print, list.append)
+   - Function is called only once
+```
 
 ---
 
-## 🔍 3. AutoGraph and Tracing Mechanics {#autograph-tracing}
+## 🔍 3. How Tracing Works (Step by Step) {#tracing}
 
-How does TensorFlow transform dynamic Python code (with `if` statements and loops) into static graphs?
+**Tracing** is the process of building the graph. Here's exactly what happens the first time you call a `@tf.function`:
+
+### The Tracing Process
 
 ![AutoGraph Tracing Pipeline](../Visuals/09_autograph_tracing_pipeline.png)
-> 📊 **Graph 09:** AutoGraph Tracing Pipeline. Translates Python AST syntax into TF operations, traces the function using symbolic tensors, and compiles the result into a fast static graph.
 
-### AutoGraph
-First, TensorFlow parses the function's source code and extracts the Abstract Syntax Tree (AST). It automatically replaces Python syntax with equivalent TensorFlow graph nodes:
-* `if` statements $\to$ `tf.cond()`
-* `for` and `while` loops $\to$ `tf.while_loop()`
+```
+Step 1: AutoGraph transforms your Python code
+        (Python if → tf.cond, Python for → tf.while_loop)
 
-![AutoGraph Code Operator Translation](../Visuals/11_autograph_code_translation.png)
-> 📊 **Graph 11:** AutoGraph compilation side-by-side mapping. Translates standard dynamic Python syntax into C++ compatible static graph execution operations.
+Step 2: TF runs your function with SYMBOLIC tensors
+        (placeholders that have shape and dtype, but NO actual values)
 
-### Tracing
-Next, TensorFlow **traces** the function. Since a static graph needs concrete data types and shapes, TensorFlow runs the function once with **symbolic tensors** (placeholders that have shapes and types but no values). 
+Step 3: During this "dry run", TF records every TF operation
 
-During this dry run, TensorFlow records every TF operation. This sequence is then compiled into the final graph.
+Step 4: The recorded operations become the computation graph
 
-> [!NOTE]
-> TensorFlow caches compiled graphs. If you call the function again with inputs of the same data type and shape, it skips tracing and runs the cached graph immediately. If you pass inputs with a new shape or data type, a new tracing step occurs.
+Step 5: The graph is compiled and cached for this input signature
+```
 
----
-
-## 📜 4. Rules for Writing Graph-Compatible Code {#graph-rules}
-
-To ensure a function compiles successfully without raising bugs, you must follow strict guidelines:
-
-### Rule 1: No Python State Side-Effects
-Python code (such as appending to a list, modifying global variables, or calling `print()`) only executes during **tracing**. During subsequent graph runs, these side-effects will **not** be triggered.
+### 🔢 Tracing with Real Example
 
 ```python
-x = 0
 @tf.function
-def side_effect_fn(t):
-    global x
-    x += 1 # Python state mutation
-    print("Python print executes!") # Executed during tracing only!
-    tf.print("TF print executes!")  # Executed during every graph run
-    return t
+def my_fn(x):
+    print("TRACING!")       # Python print — only during trace!
+    tf.print("TF RUNNING")  # TF print — during every real execution
+    return x * x
 
-# First call (Traces the function)
-res = side_effect_fn(tf.constant(1.0))
-# OUTPUT: Python print executes!
-# OUTPUT: TF print executes!
+t = tf.constant([2.0, 3.0])
+result = my_fn(t)    # First call: TRACES
+# Output: TRACING!
+# Output: TF RUNNING
+# result: [4.0, 9.0]
 
-# Second call (Uses cached graph, no tracing)
-res = side_effect_fn(tf.constant(2.0))
-# OUTPUT: TF print executes!
+result = my_fn(t)    # Second call: uses cached graph, NO tracing
+# Output: TF RUNNING  (← only TF print, Python print skipped!)
+# result: [4.0, 9.0]
 
-print("Global variable value:", x) # Traced only once, so x is 1, not 2!
-# OUTPUT: Global variable value: 1
+result = my_fn(t)    # Third call: still uses cached graph
+# Output: TF RUNNING
 ```
 
-### Rule 2: Do Not Create Variables Inside a TF Function
-Creating a `tf.Variable` (such as weights or biases) inside a decorated function raises a `ValueError` because the graph tries to allocate new memory at every execution.
-> **Fix:** Initialize all variables outside the compiled function.
-
-### Rule 3: Use `tf.range` for Graph Loops
-If you loop using `for i in range(10)`, Python unrolls the loop during tracing, creating 10 copies of the operations in the graph. This can result in a bloated graph.
-To create a loop represented as a single `tf.while_loop()` node in the graph, write `for i in tf.range(10)`.
+**Key insight:** `print("TRACING!")` only appeared once because it's Python code — it only runs during the trace phase. `tf.print()` runs every time because it becomes a node in the compiled graph.
 
 ---
 
-## ❌ Common Beginner Mistakes {#mistakes}
+## 📜 4. AutoGraph: Python Code → TF Graph Nodes {#autograph}
 
-### 1. Passing Python scalars in loops, causing excessive tracing ❌
-If you call a `@tf.function` with Python scalars (e.g., `3`, `4.5`), TensorFlow retraces the function for every distinct value. This leads to massive compilation overhead and performance degradation (known as "trace explosion").
-> **Fix:** Always pass inputs as `tf.Tensor` objects (e.g., `tf.constant(3.0)`).
+![AutoGraph Code Translation](../Visuals/11_autograph_code_translation.png)
 
-### 2. Wrapping NumPy library calls directly inside a TF function ❌
-Calling `np.random.normal()` inside a `@tf.function` will run once during tracing and bake a single constant matrix into the graph. Subsequent executions will reuse this static matrix, generating no new random numbers.
-> **Fix:** Use native TensorFlow operations for all calculations: `tf.random.normal()`.
+AutoGraph automatically converts Python control flow into equivalent TF operations:
 
----
+| Python | AutoGraph converts to |
+|--------|----------------------|
+| `if condition:` | `tf.cond(condition, ...)` |
+| `for i in tf.range(n):` | `tf.while_loop(...)` |
+| `while condition:` | `tf.while_loop(...)` |
+| `print(...)` | Nothing (only runs at trace time) |
 
-## 🎤 Interview Q&A {#interview}
+### 🔢 Example: if statement
 
-**Q1: What is a "Concrete Function" in TensorFlow?**
-> **A:** When you decorate a Python function with `@tf.function`, it becomes a polymorphic function wrapper. When you invoke it with specific input tensor shapes and data types, TensorFlow traces it and creates a static computation graph. This compiled graph, combined with its input/output signatures, is called a **Concrete Function**. You can extract it using `concrete_fn = tf_fn.get_concrete_function(signature)`.
-
-**Q2: What is "Trace Explosion" and how do you diagnose it?**
-> **A:** Trace explosion occurs when a `@tf.function` is traced repeatedly, consuming memory and causing significant latency. This happens when the function frequently receives arguments of varying shapes or Python scalars instead of Tensors. You can diagnose it by placing a Python `print()` statement inside the function. If you see the print output in your console repeatedly during training, the function is being retraced.
-
----
-
-## ⚡ One-Page Flash Card {#revision}
-
-```
-╔══════════════════════════════════════════════════════════════════╗
-║              MODULE 5 — GRAPH COMPILATION FLASH CARD             ║
-╠══════════════════════════════════════════════════════════════════╣
-║                                                                  ║
-║  EAGER VS GRAPH:                                                 ║
-║  - Eager: Runs immediately. Good for debugging.                  ║
-║  - Graph: Compiled to C++ engine. Fast, supports parallel and    ║
-║    fused operations. Highly portable.                            ║
-║                                                                  ║
-║  TRACING MECHANICS:                                              ║
-║  - Executed once per unique input signature (dtype/shape).       ║
-║  - Caches graph. Retraces if signatures change.                  ║
-║                                                                  ║
-║  COMPATIBILITY RULES:                                            ║
-║  - NO Python side-effects (e.g. print(), list.append()).         ║
-║  - NO tf.Variable creation inside the function.                  ║
-║  - Replace np.* calls with tf.* alternatives.                    ║
-║  - Replace range() with tf.range() for graph loop compression.   ║
-║                                                                  ║
-║  TRACE EXPLOSION TRAP:                                           ║
-║  - Do not pass raw Python ints/floats. Wrap in tf.constant().    ║
-╚══════════════════════════════════════════════════════════════════╝
+```python
+@tf.function
+def classify(x):
+    if x > 0:      # AutoGraph converts this to tf.cond()
+        return "positive"
+    else:
+        return "non-positive"
 ```
 
+**What AutoGraph generates internally:**
+```python
+# Equivalent to:
+@tf.function
+def classify(x):
+    return tf.cond(x > 0,
+                   lambda: "positive",
+                   lambda: "non-positive")
+```
+
+### 🔢 Example: for loop with tf.range
+
+```python
+@tf.function
+def sum_range(n):
+    total = tf.constant(0.0)
+    for i in tf.range(n):         # tf.range → tf.while_loop
+        total = total + tf.cast(i, tf.float32)
+    return total
+
+print(sum_range(5).numpy())   # 10.0  (0+1+2+3+4=10)
+```
+
+**If you use Python range instead:**
+```python
+@tf.function
+def sum_python_range(n):
+    total = 0.0
+    for i in range(n):    # Python range!
+        total = total + float(i)
+    return total
+
+# This UNROLLS the loop: 5 separate add ops in the graph (not a while_loop)
+# For n=1000: 1000 separate ops in graph! Much larger graph.
+```
+
 ---
 
-## 📈 Chapter 12 Summary Dashboard
+## 🔁 5. When Retracing Happens (The Hidden Trap) {#retracing}
 
-![Chapter 12 Summary Dashboard](../Visuals/10_summary_dashboard.png)
-> 📊 **Graph 10:** Comprehensive visual summary of all Chapter 12 concepts: Tensors, Variables, Custom Components, Autodiff, and Graph Compilation.
+![Retracing Diagram](../Visuals/15_retracing_diagram.png)
+
+TF caches one graph per **input signature** (dtype + shape). A new signature = a new trace.
+
+### 🔢 Retracing Example
+
+```python
+@tf.function
+def square(x):
+    print("Tracing!")
+    return x * x
+
+# Call 1: float32, shape=(2,)  → traces → caches
+square(tf.constant([1.0, 2.0]))    # prints "Tracing!"
+
+# Call 2: same signature → cached graph used
+square(tf.constant([3.0, 4.0]))    # no "Tracing!" ← uses cached graph
+
+# Call 3: float64, shape=(2,)  → new signature → retraces!
+square(tf.constant([1.0, 2.0], dtype=tf.float64))   # prints "Tracing!" again!
+
+# Call 4: shape=(3,) instead of (2,)  → new signature → retraces!
+square(tf.constant([1.0, 2.0, 3.0]))   # prints "Tracing!" again!
+```
+
+### Python Scalars Cause Trace Explosion (!)
+
+```python
+@tf.function
+def bad_fn(x, n):
+    return x * n
+
+# Each different Python int value triggers a new trace!
+bad_fn(tf.constant(1.0), 1)    # traces with n=1
+bad_fn(tf.constant(1.0), 2)    # traces with n=2
+bad_fn(tf.constant(1.0), 3)    # traces with n=3
+# 3 different traces! For 100 different values = 100 traces = slow!
+
+# ✅ FIX: pass n as a tensor
+@tf.function
+def good_fn(x, n):
+    return x * n
+
+good_fn(tf.constant(1.0), tf.constant(1.0))   # traces once
+good_fn(tf.constant(1.0), tf.constant(2.0))   # same signature, uses cache!
+good_fn(tf.constant(1.0), tf.constant(3.0))   # same signature, uses cache!
+```
+
+**Diagnosis:** If you see "Tracing!" printed more than expected, you have a retracing problem.
 
 ---
 
+## 📜 6. Rules for Code Inside @tf.function {#rules}
+
+### Rule 1: No Python side-effects
+
+Python statements (print, list.append, global variable changes) only run once during tracing. They are invisible during actual graph execution.
+
+```python
+results = []   # Python list
+
+@tf.function
+def bad_collect(x):
+    results.append(x)   # Python list.append — only at trace time!
+    return x * 2
+
+bad_collect(tf.constant(1.0))
+bad_collect(tf.constant(2.0))
+bad_collect(tf.constant(3.0))
+
+print(len(results))    # 1, not 3! Only trace call ran append.
+```
+
+**Fix:** Use `tf.TensorArray` or accumulate outside the function.
+
+### Rule 2: Don't create tf.Variable inside @tf.function
+
+```python
+# ❌ WRONG
+@tf.function
+def create_var():
+    w = tf.Variable(0.0)    # ValueError! Can't create Variable inside tf.function
+    return w + 1
+
+# ✅ RIGHT — create Variable outside
+w = tf.Variable(0.0)    # created once, outside
+
+@tf.function
+def use_var():
+    return w + 1
+```
+
+### Rule 3: Use tf.* operations, not NumPy inside the function
+
+```python
+import numpy as np
+
+# ❌ WRONG — np.random.normal() runs ONCE at trace time, baked as constant
+@tf.function
+def bad_random(x):
+    noise = np.random.normal(0, 1, x.shape)   # same noise every time!
+    return x + noise
+
+# ✅ RIGHT — tf.random.normal() generates new random values each call
+@tf.function
+def good_random(x):
+    noise = tf.random.normal(tf.shape(x))     # different noise each call ✅
+    return x + noise
+```
+
+### Rule 4: Use tf.range for loops (not Python range)
+
+```python
+# ❌ WRONG — Python range unrolls the loop
+@tf.function
+def unrolled_sum(n):
+    total = tf.constant(0.0)
+    for i in range(10):    # graph has 10 separate add ops
+        total += float(i)
+    return total
+
+# ✅ RIGHT — tf.range creates a single while_loop node
+@tf.function
+def looped_sum(n):
+    total = tf.constant(0.0)
+    for i in tf.range(n):   # single while_loop node in graph
+        total = total + tf.cast(i, tf.float32)
+    return total
+```
+
 ---
 
-**🔗 Previous Module →** [04_Autodiff_and_Custom_Training_Loops.md](04_Autodiff_and_Custom_Training_Loops.md)  
+## ❌ 7. Common Mistakes (Wrong vs. Right) {#mistakes}
+
+### Mistake 1: Python print vs. tf.print
+
+```python
+# ❌ WRONG for debugging inside @tf.function
+@tf.function
+def debug_fn(x):
+    print("x =", x)    # only prints once, at trace time, shows symbolic tensor
+    return x * 2
+
+# ✅ RIGHT for debugging inside @tf.function
+@tf.function
+def debug_fn(x):
+    tf.print("x =", x)    # prints every time the graph runs, shows real values
+    return x * 2
+```
+
+### Mistake 2: Python scalar arguments causing retracing
+
+```python
+# ❌ WRONG — retracing for each value
+@tf.function
+def scale(x, factor):    # factor is Python int
+    return x * factor
+
+for i in range(10):
+    scale(data, i)   # 10 retraces!
+
+# ✅ RIGHT — use tf.constant so shape+dtype stays the same
+for i in range(10):
+    scale(data, tf.constant(float(i)))   # traced once, reused 9 times
+```
+
+### Mistake 3: NumPy ops inside @tf.function
+
+```python
+import numpy as np
+
+# ❌ WRONG
+@tf.function
+def bad(x):
+    return np.sqrt(x.numpy())    # errors in graph mode, .numpy() doesn't work in graph!
+
+# ✅ RIGHT
+@tf.function
+def good(x):
+    return tf.sqrt(x)    # TF equivalent ✅
+```
+
+### Mistake 4: if on a Python bool vs. tensor bool
+
+```python
+# ❌ WRONG — checking a Python bool, not a tensor!
+is_training = True
+
+@tf.function
+def wrong_mode(x):
+    if is_training:     # checks Python variable at trace time only!
+        return x * 0.5  # dropout-like
+    return x
+
+# The graph is fixed to always use the trace-time value of is_training
+# Changing is_training later has NO effect!
+
+# ✅ RIGHT — pass it as a tensor argument
+@tf.function
+def correct_mode(x, training):    # tensor argument
+    return tf.cond(training,
+                   lambda: x * 0.5,   # if training
+                   lambda: x)         # if not training
+```
+
+---
+
+## 🔗 8. How It All Connects {#connects}
+
+```
+THE COMPLETE PICTURE: Eager ↔ Graph
+
+Development / Debugging
+─────────────────────────
+Write model with keras.layers and standard Python
+Run with eager execution (default in TF 2.x)
+Debug freely: print tensors, use Python debugger
+
+                    ↓ @tf.function applied
+                    (or used inside Keras model automatically)
+
+Production / Training at Scale
+─────────────────────────────
+First call with new signature:
+  AutoGraph: Python if/for → tf.cond/tf.while_loop
+  Trace: symbolic tensors, record all TF ops
+  Compile: ops → optimized C++ computation graph
+  Cache: store graph for this (dtype, shape) signature
+
+All subsequent calls with same signature:
+  Skip Python entirely
+  Execute cached C++ graph
+  Return result
+
+                    ↓ Benefits
+
+2x-20x faster training
+Deployable to: TF Serving (C++), TF Lite (mobile), TF.js (browser)
+Parallelism: independent ops run concurrently on GPU cores
+```
+
+---
+
+## ⚡ 9. Flash Card {#flashcard}
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║          MODULE 5 — TF FUNCTIONS & GRAPHS FLASH CARD         ║
+╠══════════════════════════════════════════════════════════════╣
+║                                                              ║
+║  EAGER vs. GRAPH:                                            ║
+║    Eager: runs immediately, line-by-line, easy to debug      ║
+║    Graph: compiled to C++, much faster, deployable           ║
+║                                                              ║
+║  @tf.function:                                               ║
+║    First call with new signature → TRACE (builds graph)      ║
+║    Same signature again → use CACHED graph (fast)            ║
+║    New dtype or shape → RETRACE (new graph built)            ║
+║                                                              ║
+║  AUTOGRAPH converts:                                         ║
+║    Python if  → tf.cond()                                    ║
+║    for/while  → tf.while_loop()   (use tf.range!)            ║
+║    print()    → runs at trace only (use tf.print instead!)   ║
+║                                                              ║
+║  RULES inside @tf.function:                                  ║
+║    ❌ Don't: Python print, list.append, global var changes   ║
+║    ❌ Don't: create tf.Variable inside function              ║
+║    ❌ Don't: NumPy ops (use tf.* equivalents)                ║
+║    ❌ Don't: Python scalars as args (causes trace explosion)  ║
+║    ✅ Do: tf.print, tf.range, tf.Variable outside, tf.*      ║
+║                                                              ║
+║  TRACE EXPLOSION DIAGNOSIS:                                  ║
+║    Put Python print inside function.                         ║
+║    If it prints more than once = retracing = problem!        ║
+║    Fix: wrap Python scalars in tf.constant()                 ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
+---
+
+**🔗 Previous Module →** [04_Autodiff_and_Custom_Training_Loops.md](04_Autodiff_and_Custom_Training_Loops.md)
 **🔗 Chapter Complete! →** [Back to Chapter Index](../notes.md)

@@ -1,84 +1,123 @@
-# 🔧 Module 2: Custom Losses, Metrics, Layers, and Models
-> **Ch. 12 — Hands-On ML with Scikit-Learn, Keras & TensorFlow (Aurélien Géron)**
+# 🔧 Module 2: Custom Loss Functions, Metrics, Layers & Components
+> **Ch. 12 — Hands-On ML with Scikit-Learn, Keras & TensorFlow**
+> **Rewritten: Plain English → Real Numbers → Code → Why It Matters**
 
 ---
 
 ## 📌 Table of Contents
-1. [Start Here: The Big Picture](#big-picture)
+1. [Why "Custom"? The Big Picture](#big-picture)
 2. [Custom Loss Functions](#custom-loss)
-3. [Saving Custom Objects with get_config()](#saving)
-4. [Custom Activation Functions, Initializers, Regularizers, Constraints](#custom-activations)
-5. [Custom Metrics — Stateful vs. Stateless](#custom-metrics)
-6. [Custom Layers](#custom-layers)
-7. [Custom Models](#custom-models)
-8. [Common Beginner Mistakes](#mistakes)
-9. [Interview Q&A](#interview)
-10. [⚡ One-Page Flash Card](#revision)
+3. [Saving Hyperparameters with get_config()](#saving)
+4. [Custom Activations, Initializers, Regularizers, Constraints](#custom-activations)
+5. [Custom Metrics: Stateless vs. Stateful](#custom-metrics)
+6. [Common Mistakes (Wrong vs. Right)](#mistakes)
+7. [How It All Connects](#connects)
+8. [Flash Card](#flashcard)
 
 ---
 
-## 🌍 Start Here: The Big Picture {#big-picture}
+## 🌍 1. Why "Custom"? The Big Picture {#big-picture}
 
-> **TL;DR:** Keras's high-level API covers 90% of use cases, but when you need something it doesn't support — a novel loss function, a research paper's custom layer, a GAN training loop — you must go custom. Keras makes this clean: subclass the right base class, implement `call()`, implement `get_config()`.
+Keras gives you ready-made losses (`MSE`, `CrossEntropy`), metrics (`Accuracy`), and layers (`Dense`, `Conv2D`).
 
-**When do you need customization?**
-| Custom Thing | When Needed |
-|-------------|-------------|
-| Custom Loss | Novel research loss (e.g., focal loss, contrastive loss) |
-| Custom Metric | Domain-specific evaluation (e.g., mAP, BLEU, IoU) |
-| Custom Layer | Novel architecture (e.g., attention, graph conv) |
-| Custom Model | Non-sequential data flow (e.g., GAN, siamese) |
-| Custom Training Loop | Fine-grained control (multi-optimizer, custom backprop) |
+**But what if you need something Keras doesn't have?**
 
-**The general pattern for ALL custom Keras components:**
+| You want... | Built-in? | Solution |
+|-------------|-----------|---------|
+| Huber loss (robust to outliers) | ✅ Actually yes | But custom teaches the pattern |
+| Focal loss (for imbalanced data) | ❌ No | Custom loss function |
+| mAP (mean average precision) | ❌ No | Custom stateful metric |
+| Attention layer (custom formula) | ❌ No | Custom layer |
+| GAN training loop | ❌ No | Custom model + training loop |
+
+**The universal Keras customization pattern:**
 ```python
-class MyCustomComponent(keras.SomeBaseClass):
+class MyThing(keras.SomeBaseClass):
     def __init__(self, hyperparams, **kwargs):
-        super().__init__(**kwargs)  # pass name, dtype etc.
+        super().__init__(**kwargs)
         self.hyperparams = hyperparams
 
-    def call(self, inputs):  # or __call__ for regularizers
-        # The actual computation
+    def call(self, inputs):         # the actual computation
         return output
 
-    def get_config(self):   # REQUIRED for model saving!
-        base_config = super().get_config()
-        return {**base_config, "hyperparams": self.hyperparams}
+    def get_config(self):           # REQUIRED for saving!
+        return {**super().get_config(), "hyperparams": self.hyperparams}
 ```
+
+Once you understand this pattern, you can build anything.
 
 ---
 
-## 📉 Custom Loss Functions {#custom-loss}
+## 📉 2. Custom Loss Functions {#custom-loss}
 
-![Huber Loss](../Visuals/03_custom_loss_huber.png)
-> 📊 **Graph 03:** The Huber Loss function compared to MSE and MAE. It is quadratic for small errors (like MSE) and linear for large errors (like MAE), making it robust to outliers while maintaining a smooth gradient near zero.
+### What is the Huber Loss?
 
-### Approach 1: Simple Function (No Hyperparameters to Save)
+**The problem with MSE:** Squaring errors makes big errors enormous. One bad data point (outlier) can dominate the entire loss.
+
+```
+Data: 5 house prices (in $100k):  [2, 3, 4, 5, 100]
+                                                 ↑
+                                           Outlier!
+
+Predictions:                        [2.1, 3.1, 4.1, 5.1, 5.1]
+
+Errors:                             [-0.1, -0.1, -0.1, -0.1, 94.9]
+
+MSE per sample:                     [0.01, 0.01, 0.01, 0.01, 9006.0]
+                                                               ↑
+                                           This ONE outlier causes 99.9% of the loss!
+```
+
+**The Huber Loss solution:** Use squared error for small errors (gentle), but switch to linear error for large errors (less punishing):
+
+```
+                    Error²/2        if |error| ≤ threshold
+Huber loss =  {
+                    threshold×|error| - threshold²/2    if |error| > threshold
+```
+
+### 🔢 Step-by-Step Huber Loss Calculation (threshold = 1.0)
+
+```
+Example: 3 predictions vs. true values
+
+      y_true   y_pred   error    |error|  small?   Huber Loss
+Row 1:   3.0    3.2     -0.2     0.2      YES (≤1)  0.2²/2 = 0.02
+Row 2:   5.0    4.5      0.5     0.5      YES (≤1)  0.5²/2 = 0.125
+Row 3:   2.0    5.0     -3.0     3.0      NO  (>1)  1×3 - 1²/2 = 2.5
+
+Total loss = mean = (0.02 + 0.125 + 2.5) / 3 = 0.882
+```
+
+Compare to MSE:
+```
+MSE = (0.2² + 0.5² + 3.0²) / 3 = (0.04 + 0.25 + 9.0) / 3 = 3.097
+```
+
+MSE is 3.5x larger — dominated by the outlier. Huber is more balanced.
+
+![Huber Loss with Numbers](../Visuals/03_custom_loss_huber.png)
+
+### Approach 1: Simple Function
 
 ```python
 import tensorflow as tf
 from tensorflow import keras
 
 def huber_fn(y_true, y_pred):
-    """
-    Huber loss: MSE for small errors, MAE for large errors.
-    Less sensitive to outliers than MSE while remaining smooth.
-    """
     error = y_true - y_pred
-    is_small_error = tf.abs(error) < 1.0          # threshold = 1.0
-    squared_loss = tf.square(error) / 2
-    linear_loss  = 1.0 * tf.abs(error) - 1.0**2 / 2  # threshold * |e| - threshold²/2
-    return tf.where(is_small_error, squared_loss, linear_loss)
+    is_small = tf.abs(error) < 1.0            # threshold = 1.0
+    squared_loss = tf.square(error) / 2       # for small errors
+    linear_loss  = tf.abs(error) - 0.5        # for large errors: 1*|e| - 1²/2
+    return tf.where(is_small, squared_loss, linear_loss)
 
-# Usage:
 model.compile(loss=huber_fn, optimizer="nadam")
-
-# Loading with custom loss:
-model = keras.models.load_model("model.h5",
-                                 custom_objects={"huber_fn": huber_fn})
 ```
 
-**Problem:** What if you want a configurable threshold? You CAN use a closure:
+**Problem:** You can't change the threshold. And if you save the model, `huber_fn` must be re-registered when loading.
+
+### Approach 2: Closure with Configurable Threshold
+
 ```python
 def create_huber(threshold=1.0):
     def huber_fn(y_true, y_pred):
@@ -89,29 +128,26 @@ def create_huber(threshold=1.0):
         return tf.where(is_small, squared, linear)
     return huber_fn
 
-model.compile(loss=create_huber(2.0), optimizer="nadam")
+model.compile(loss=create_huber(threshold=2.0), optimizer="nadam")
 ```
 
-**Problem with closure:** When you save the model and reload it, the `threshold=2.0` parameter is LOST. You must specify it again at load time!
+**Problem:** When you save and reload the model, the `threshold=2.0` is LOST. You must specify it again.
 
----
+```python
+# Loading: must manually specify threshold again
+model = keras.models.load_model("model.h5",
+                                 custom_objects={"huber_fn": create_huber(2.0)})
+```
 
-### Approach 2: Subclass keras.losses.Loss (Hyperparameters Saved!)
-
-The solution for saving hyperparameters with the model:
+### Approach 3: Class — Best Practice (Threshold is SAVED)
 
 ```python
 class HuberLoss(keras.losses.Loss):
-    """
-    Custom Huber Loss with configurable threshold.
-    Hyperparameters are saved with the model via get_config().
-    """
     def __init__(self, threshold=1.0, **kwargs):
         self.threshold = threshold
-        super().__init__(**kwargs)   # handles: name=, reduction=
+        super().__init__(**kwargs)
 
     def call(self, y_true, y_pred):
-        """The actual loss computation — returns per-instance losses."""
         error = y_true - y_pred
         is_small = tf.abs(error) < self.threshold
         squared_loss = tf.square(error) / 2
@@ -119,99 +155,129 @@ class HuberLoss(keras.losses.Loss):
         return tf.where(is_small, squared_loss, linear_loss)
 
     def get_config(self):
-        """Serialize hyperparameters for model saving."""
-        base_config = super().get_config()  # includes 'name' and 'reduction'
+        base_config = super().get_config()          # includes 'name', 'reduction'
         return {**base_config, "threshold": self.threshold}
 
 # Usage:
 model.compile(loss=HuberLoss(threshold=2.0), optimizer="nadam")
-model.save("my_model.h5")
+model.save("model.h5")
 
-# Load — threshold IS preserved in the HDF5 file!
-model = keras.models.load_model("my_model.h5",
+# Load — threshold=2.0 IS preserved inside the file!
+model = keras.models.load_model("model.h5",
                                  custom_objects={"HuberLoss": HuberLoss})
 ```
 
-**How saving works:**
-1. `model.save()` → calls `loss_instance.get_config()` → saves as JSON
-2. `keras.models.load_model()` → reads JSON → calls `HuberLoss.from_config(config)`
-3. `from_config(config)` is inherited from `Loss` base class — calls `HuberLoss(**config)`
+### 🔢 What get_config() Actually Does
+
+```python
+loss = HuberLoss(threshold=2.0)
+print(loss.get_config())
+# {'name': 'huber_loss', 'reduction': 'sum_over_batch_size', 'threshold': 2.0}
+#  ↑ from super()                                              ↑ your addition
+
+# When you save the model, Keras stores this dictionary as JSON
+# When you load, Keras calls:  HuberLoss(**config_dict)
+# Which is the same as:        HuberLoss(name='huber_loss', threshold=2.0)
+```
 
 ---
 
-## 💾 Saving Custom Objects with get_config() {#saving}
+## 💾 3. Saving Hyperparameters with get_config() {#saving}
 
-**The Rule:** Any custom class that will be saved with a model MUST implement `get_config()`.
+**The rule:** Any custom class that you want to save with a model MUST implement `get_config()`.
 
-**General pattern:**
+**Why?** When you call `model.save()`, Keras needs to record "what components are in this model and how were they configured". It does this by calling `get_config()` on each component and saving the result as JSON.
+
+```
+model.save("my_model.h5")
+    └── calls HuberLoss.get_config()
+        └── returns {"name": "huber_loss", "threshold": 2.0}
+            └── stored in the HDF5 file as JSON
+
+keras.models.load_model("my_model.h5", custom_objects={"HuberLoss": HuberLoss})
+    └── reads JSON: {"threshold": 2.0}
+        └── calls HuberLoss(threshold=2.0)  ← reconstructs with same settings
+```
+
+**Template — always use this pattern:**
 ```python
 def get_config(self):
-    # Start with parent's config (handles: name, dtype, etc.)
-    base_config = super().get_config()
-    # Add YOUR hyperparameters
-    return {**base_config, "param1": self.param1, "param2": self.param2}
-```
-
-**Loading pattern:**
-```python
-# Must explicitly tell Keras about ALL custom classes
-model = keras.models.load_model(
-    "model.h5",
-    custom_objects={
-        "HuberLoss": HuberLoss,
-        "MyCustomLayer": MyCustomLayer,
-        "MyCustomMetric": MyCustomMetric
-    }
-)
+    base_config = super().get_config()      # always start with parent's config
+    return {**base_config,                  # unpack parent's dict
+            "param1": self.param1,          # add your own parameters
+            "param2": self.param2}
 ```
 
 ---
 
-## ⚡ Custom Activation Functions, Initializers, Regularizers, Constraints {#custom-activations}
+## ⚡ 4. Custom Activations, Initializers, Regularizers, Constraints {#custom-activations}
 
-### Custom Activation (as simple function)
+These are simpler than losses. They follow the same pattern but are used in different places.
+
+### Custom Activation Function
+
+**What is an activation function?** After each layer computes `output = input @ weights + bias`, the activation function transforms the result to introduce non-linearity.
+
+**Example: Softplus** — a smooth version of ReLU
+
+```
+Regular ReLU:  f(x) = max(0, x)       ← sharp corner at 0
+Softplus:      f(x) = log(1 + e^x)    ← smooth version
+
+At x = -3: ReLU = 0,    Softplus = log(1 + e^-3) ≈ log(1.05) ≈ 0.048
+At x =  0: ReLU = 0,    Softplus = log(1 + e^0)  = log(2)    ≈ 0.693
+At x =  3: ReLU = 3,    Softplus = log(1 + e^3)  ≈ log(21)   ≈ 3.048
+```
 
 ```python
 def my_softplus(z):
-    """Softplus: smooth ReLU approximation. f(z) = log(1 + e^z)"""
     return tf.math.log(1.0 + tf.exp(z))
 
-# Or as a class (for hyperparameters):
-class LeakyReLU(keras.layers.Layer):
-    def __init__(self, alpha=0.01, **kwargs):
-        super().__init__(**kwargs)
-        self.alpha = alpha
-    def call(self, x):
-        return tf.where(x >= 0, x, self.alpha * x)
-    def get_config(self):
-        return {**super().get_config(), "alpha": self.alpha}
+layer = keras.layers.Dense(30, activation=my_softplus)
 ```
 
 ### Custom Glorot Initializer
 
+**What is initialization?** The starting values of weights before training. Bad initialization can cause training to fail (vanishing/exploding gradients).
+
+**Glorot normal:** Set initial weights based on the layer size.
+```
+stddev = sqrt(2 / (fan_in + fan_out))
+
+For a layer: input_size=4, output_size=2
+stddev = sqrt(2 / (4+2)) = sqrt(0.333) ≈ 0.577
+Weights drawn from: Normal(mean=0, stddev=0.577)
+```
+
 ```python
 def my_glorot_initializer(shape, dtype=tf.float32):
-    """
-    Glorot normal: stddev = sqrt(2 / (fan_in + fan_out))
-    shape[0] = fan_in, shape[1] = fan_out (for Dense layers)
-    """
     stddev = tf.sqrt(2. / (shape[0] + shape[1]))
     return tf.random.normal(shape, stddev=stddev, dtype=dtype)
 ```
 
 ### Custom L1 Regularizer
 
-```python
-def my_l1_regularizer(weights):
-    """L1 regularization: penalizes sum of absolute values of weights."""
-    return tf.reduce_sum(tf.abs(0.01 * weights))
+**What is regularization?** Adding a penalty to the loss when weights become too large. This prevents overfitting.
 
-# As class (saves factor with model):
+**L1 regularization:**
+```
+Main loss (e.g., 0.5) + regularization penalty
+
+Weights of one layer: [0.8, -0.3, 1.2, -0.1]
+L1 penalty = factor × sum(|weights|)
+           = 0.01 × (0.8 + 0.3 + 1.2 + 0.1)
+           = 0.01 × 2.4
+           = 0.024
+
+Total loss = 0.5 + 0.024 = 0.524
+```
+
+```python
 class MyL1Regularizer(keras.regularizers.Regularizer):
     def __init__(self, factor=0.01):
         self.factor = factor
 
-    def __call__(self, weights):        # regularizers use __call__, not call!
+    def __call__(self, weights):             # Note: __call__, NOT call!
         return tf.reduce_sum(tf.abs(self.factor * weights))
 
     def get_config(self):
@@ -220,332 +286,292 @@ class MyL1Regularizer(keras.regularizers.Regularizer):
 
 ### Custom Weight Constraint
 
+**What is a constraint?** After each gradient update, forcibly clip weights to satisfy some condition.
+
 ```python
 def my_positive_weights(weights):
-    """Constraint: all weights must be non-negative (ReLU on weights)."""
+    """Force all weights to be >= 0."""
     return tf.where(weights < 0., tf.zeros_like(weights), weights)
+    # Negative weights → 0.0,  Non-negative weights → unchanged
 ```
 
-### Using All Together
+### Using All Four Together
 
 ```python
 layer = keras.layers.Dense(
     30,
     activation=my_softplus,
     kernel_initializer=my_glorot_initializer,
-    kernel_regularizer=my_l1_regularizer,
+    kernel_regularizer=MyL1Regularizer(factor=0.01),
     kernel_constraint=my_positive_weights
 )
 ```
 
-**What happens during training:**
-1. Weights initialized by `my_glorot_initializer`
-2. Forward pass: `my_softplus` applied to output
-3. Loss computation: `my_l1_regularizer(weights)` added to main loss
-4. After each update step: `my_positive_weights` applied to clip weights
+**What happens during training (in order):**
+```
+1. Layer created  →  weights set by my_glorot_initializer
+2. Forward pass   →  output = my_softplus(input @ W + b)
+3. Loss computed  →  total_loss = main_loss + MyL1Regularizer(W)
+4. Gradients      →  d(total_loss)/d(W) computed
+5. Weights update →  W = W - lr × gradient
+6. Constraint     →  W = my_positive_weights(W)   (clip negatives)
+7. Next batch     →  repeat from step 2
+```
 
 ---
 
-## 📊 Custom Metrics — Stateful vs. Stateless {#custom-metrics}
+## 📊 5. Custom Metrics: Stateless vs. Stateful {#custom-metrics}
 
-**The critical distinction:**
+### The Problem with Simple Functions (Stateless Metrics)
 
-![Stateful vs Stateless Metric](../Visuals/04_stateful_vs_stateless_metric.png)
-> 📊 **Graph 04:** Stateful vs Stateless metrics. Stateful metrics accumulate running variables (like total_sum and total_count) across batches to compute the true epoch metric, rather than just averaging the batch means.
+Suppose you're evaluating a model on 100 batches of 32 samples each.
 
-| Type | When to Use | Example |
-|------|-------------|---------|
-| **Stateless** (function) | Each batch has all info needed | Simple mean error |
-| **Stateful** (class) | Need to accumulate across batches | Streaming precision, AUC |
+**Simple approach (WRONG for unequal batch sizes):**
+```
+Batch 1 (32 samples):  loss = 0.40
+Batch 2 (32 samples):  loss = 0.30
+...
+Batch 99 (32 samples): loss = 0.20
+Batch 100 (8 samples): loss = 0.10   ← only 8 samples, not 32!
 
-### Stateless Custom Metric (Function)
-
-```python
-def create_huber_metric(threshold=1.0):
-    def huber_metric(y_true, y_pred):
-        error = y_true - y_pred
-        is_small = tf.abs(error) < threshold
-        squared = tf.square(error) / 2
-        linear  = threshold * tf.abs(error) - threshold**2 / 2
-        per_instance = tf.where(is_small, squared, linear)
-        return tf.reduce_mean(per_instance)
-    return huber_metric
-
-model.compile(..., metrics=[create_huber_metric(2.0)])
+Wrong: mean of batch means = (0.40 + 0.30 + ... + 0.10) / 100
+       The last batch gets equal weight as others, but has fewer samples!
 ```
 
-### Stateful Custom Metric (Class) — More Powerful
+**Correct approach (stateful, accumulate):**
+```
+Running total:  sum of (loss × sample_count) across all batches
+Running count:  total number of samples
+
+Correct metric = running_total / running_count
+              = sum(batch_loss_i × n_samples_i) / sum(n_samples_i)
+```
+
+![Stateful vs Stateless Metric](../Visuals/04_stateful_vs_stateless_metric.png)
+
+### Stateless Metric (Function) — Simple but Limited
+
+```python
+def huber_metric(y_true, y_pred):
+    error = y_true - y_pred
+    is_small = tf.abs(error) < 1.0
+    squared = tf.square(error) / 2
+    linear  = tf.abs(error) - 0.5
+    per_instance = tf.where(is_small, squared, linear)
+    return tf.reduce_mean(per_instance)   # just mean of this batch
+
+model.compile(..., metrics=[huber_metric])
+```
+
+This works when all batches are the same size. For variable sizes, use stateful.
+
+### Stateful Metric (Class) — Correct for All Cases
 
 ```python
 class HuberMetric(keras.metrics.Metric):
-    """
-    Streaming Huber metric: accumulates total and count across batches.
-    Keras calls update_state() for each batch.
-    Keras calls result() to get the final metric value.
-    Keras calls reset_state() between epochs.
-    """
     def __init__(self, threshold=1.0, **kwargs):
         super().__init__(**kwargs)
         self.threshold = threshold
-        # tf.Variable to accumulate across batches
-        self.huber_fn = HuberLoss(threshold)
-        self.total = self.add_weight("total", initializer="zeros")  # sum of losses
-        self.count = self.add_weight("count", initializer="zeros")  # total instances
+        # These two variables accumulate across batches:
+        self.total = self.add_weight("total", initializer="zeros")   # sum of losses
+        self.count = self.add_weight("count", initializer="zeros")   # sample count
 
     def update_state(self, y_true, y_pred, sample_weight=None):
-        """Called after each batch — accumulate running sums."""
-        metric_value = self.huber_fn(y_true, y_pred)
-        self.total.assign_add(tf.reduce_sum(metric_value))
-        self.count.assign_add(tf.cast(tf.size(y_true), tf.float32))
+        """Called after EACH batch — accumulate the running totals."""
+        error = y_true - y_pred
+        is_small = tf.abs(error) < self.threshold
+        squared = tf.square(error) / 2
+        linear  = self.threshold * tf.abs(error) - self.threshold**2 / 2
+        per_sample_loss = tf.where(is_small, squared, linear)
+
+        self.total.assign_add(tf.reduce_sum(per_sample_loss))   # add batch total
+        self.count.assign_add(tf.cast(tf.size(y_true), tf.float32))  # add count
 
     def result(self):
-        """Return the current metric value (total / count)."""
+        """Called at end of epoch — return the accumulated mean."""
         return self.total / self.count
 
     def get_config(self):
-        base_config = super().get_config()
-        return {**base_config, "threshold": self.threshold}
+        return {**super().get_config(), "threshold": self.threshold}
 
-# Usage:
-model.compile(..., metrics=[HuberMetric(2.0)])
+    # reset_state() is inherited — it resets total and count to 0 each epoch
+
+model.compile(..., metrics=[HuberMetric(threshold=1.5)])
 ```
 
-**Why stateful?** If you evaluate on 1000 batches of 32 instances, you need:
-- Batch 1: sum_loss_1, count = 32
-- Batch 2: total_sum = sum_1 + sum_2, count = 64
-- ...
-- Final: total_sum / (1000 × 32) = true mean metric
+### 🔢 Stateful Metric: Tracing One Epoch
 
-A simple function would just average the batch means (wrong if batches are different sizes!).
+```
+Epoch 1, 3 batches:
+
+Batch 1 (4 samples):  per_sample_losses = [0.02, 0.125, 0.02, 2.5]
+  total.assign_add(0.02 + 0.125 + 0.02 + 2.5)  = 2.665
+  count.assign_add(4)                             = 4
+
+Batch 2 (4 samples):  per_sample_losses = [0.5, 0.3, 0.18, 0.08]
+  total.assign_add(0.5 + 0.3 + 0.18 + 0.08)    = 2.665 + 1.06 = 3.725
+  count.assign_add(4)                             = 8
+
+Batch 3 (2 samples):  per_sample_losses = [0.72, 0.45]
+  total.assign_add(0.72 + 0.45)                  = 3.725 + 1.17 = 4.895
+  count.assign_add(2)                             = 10
+
+result() = total / count = 4.895 / 10 = 0.4895   ← correct epoch mean!
+
+[Next epoch begins: reset_state() is called → total=0, count=0]
+```
 
 ---
 
-## 🔩 Custom Layers {#custom-layers}
+## ❌ 6. Common Mistakes (Wrong vs. Right) {#mistakes}
 
-### When to subclass keras.layers.Layer
-
-1. The layer has **learnable weights** (Dense, Conv, Attention)
-2. The layer has **complex internal state** 
-3. The layer is NOT just a combination of existing layers
+### Mistake 1: Not implementing get_config()
 
 ```python
-class MyDense(keras.layers.Layer):
-    """
-    Custom reimplementation of Dense layer.
-    Demonstrates the proper custom layer pattern.
-    """
-    def __init__(self, units, activation=None, **kwargs):
+# ❌ WRONG
+class HuberLoss(keras.losses.Loss):
+    def __init__(self, threshold=1.0, **kwargs):
         super().__init__(**kwargs)
+        self.threshold = threshold   # no get_config() !
+
+    def call(self, y_true, y_pred):
+        ...
+
+model.compile(loss=HuberLoss(threshold=2.0))
+model.save("model.h5")
+model2 = keras.models.load_model("model.h5", custom_objects={"HuberLoss": HuberLoss})
+# model2 uses threshold=1.0 (default) — the 2.0 was silently lost!
+
+# ✅ RIGHT: add get_config()
+def get_config(self):
+    return {**super().get_config(), "threshold": self.threshold}
+# Now threshold=2.0 is saved and restored correctly ✅
+```
+
+### Mistake 2: Using Python `if` inside @tf.function with tensor conditions
+
+```python
+# ❌ WRONG — Python if checks VALUE during tracing (only once!)
+@tf.function
+def my_loss(y_true, y_pred, use_huber):
+    if use_huber:           # this is only evaluated ONCE at trace time!
+        return huber(y_true, y_pred)
+    return mse(y_true, y_pred)
+
+# ✅ RIGHT — use tf.cond for tensor conditionals
+@tf.function
+def my_loss(y_true, y_pred, use_huber):
+    return tf.cond(use_huber,
+                   lambda: huber(y_true, y_pred),
+                   lambda: mse(y_true, y_pred))
+```
+
+### Mistake 3: Stateful metric as a function
+
+```python
+# ❌ WRONG — function only sees one batch at a time
+def streaming_accuracy(y_true, y_pred):
+    return tf.reduce_mean(tf.cast(y_true == y_pred, tf.float32))
+# This gives mean for each batch, then those means are averaged together
+# Wrong if batches have different sizes!
+
+# ✅ RIGHT — use keras.metrics.Accuracy() which is already stateful
+model.compile(metrics=["accuracy"])
+# Or build a custom stateful metric class as shown above
+```
+
+### Mistake 4: Not calling super().__init__(**kwargs)
+
+```python
+# ❌ WRONG
+class MyLayer(keras.layers.Layer):
+    def __init__(self, units):
+        self.units = units     # super().__init__() not called!
+        # Missing: name, dtype, trainable, and other Layer attributes!
+
+# ✅ RIGHT
+class MyLayer(keras.layers.Layer):
+    def __init__(self, units, **kwargs):
+        super().__init__(**kwargs)   # sets name, dtype, etc.
         self.units = units
-        self.activation = keras.activations.get(activation)
-
-    def build(self, input_shape):
-        """
-        Called ONCE on first call with actual input shape.
-        Create weight variables here (input_shape unknown until build()).
-        """
-        self.W = self.add_weight(name="weights",
-                                  shape=[input_shape[-1], self.units],
-                                  initializer="glorot_normal")
-        self.b = self.add_weight(name="bias",
-                                  shape=[self.units],
-                                  initializer="zeros")
-        super().build(input_shape)  # marks layer as built
-
-    def call(self, X):
-        """The forward computation."""
-        return self.activation(X @ self.W + self.b)
-
-    def compute_output_shape(self, input_shape):
-        """Optional but useful for graph mode."""
-        return tf.TensorShape(input_shape.as_list()[:-1] + [self.units])
-
-    def get_config(self):
-        base_config = super().get_config()
-        return {**base_config, "units": self.units,
-                "activation": keras.activations.serialize(self.activation)}
-```
-
-### Custom Layer with Different Train/Test Behavior
-
-```python
-class MyDropout(keras.layers.Layer):
-    """Custom Dropout that drops neurons only during training."""
-
-    def __init__(self, rate, **kwargs):
-        super().__init__(**kwargs)
-        self.rate = rate
-
-    def call(self, X, training=None):
-        """training argument is passed by Keras automatically."""
-        if training:
-            # During training: randomly zero out neurons
-            keep_prob = 1 - self.rate
-            random_tensor = tf.random.uniform(shape=tf.shape(X))
-            binary_mask = tf.floor(random_tensor + keep_prob)
-            return X * binary_mask / keep_prob  # inverted dropout scaling
-        return X  # during evaluation: pass through unchanged
-
-    def get_config(self):
-        return {**super().get_config(), "rate": self.rate}
-```
-
-> ⚠️ **Critical:** Custom layers that behave differently during training vs. inference MUST accept a `training` argument in `call()` and propagate it if calling other layers internally.
-
----
-
-## 🏗️ Custom Models {#custom-models}
-
-### When to use the Subclassing API for Models
-
-The Subclassing API gives maximum flexibility — any Python control flow (if/else, loops, etc.) is allowed.
-
-```python
-class ResidualUnit(keras.layers.Layer):
-    """A single residual unit (skip connection block)."""
-
-    def __init__(self, n_filters, strides=1, activation="relu", **kwargs):
-        super().__init__(**kwargs)
-        self.activation = keras.activations.get(activation)
-        # Main path
-        self.main_layers = [
-            keras.layers.Conv2D(n_filters, 3, strides=strides,
-                                 padding="same", use_bias=False),
-            keras.layers.BatchNormalization(),
-            keras.layers.Activation("relu"),
-            keras.layers.Conv2D(n_filters, 3, strides=1, padding="same", use_bias=False),
-            keras.layers.BatchNormalization()
-        ]
-        # Skip path (only if dimensions change)
-        self.skip_layers = []
-        if strides > 1:
-            self.skip_layers = [
-                keras.layers.Conv2D(n_filters, 1, strides=strides,
-                                    padding="same", use_bias=False),
-                keras.layers.BatchNormalization()
-            ]
-
-    def call(self, inputs):
-        """Forward pass: main path + skip connection."""
-        Z = inputs
-        for layer in self.main_layers:
-            Z = layer(Z)
-        
-        skip_Z = inputs
-        for layer in self.skip_layers:
-            skip_Z = layer(skip_Z)
-        
-        return self.activation(Z + skip_Z)  # element-wise add
-
-
-class ResNet34(keras.Model):
-    """Simplified ResNet-34 implementation."""
-
-    def __init__(self, n_classes=10, **kwargs):
-        super().__init__(**kwargs)
-        self.n_classes = n_classes
-
-        # Stem
-        self.conv1 = keras.layers.Conv2D(64, 7, strides=2, padding="same", use_bias=False)
-        self.bn1   = keras.layers.BatchNormalization()
-        self.relu1 = keras.layers.Activation("relu")
-        self.pool1 = keras.layers.MaxPooling2D(pool_size=3, strides=2, padding="same")
-
-        # Residual blocks
-        prev_filters = 64
-        self.res_layers = []
-        for filters, reps, strides in ((64, 3, 1), (128, 4, 2), (256, 6, 2), (512, 3, 2)):
-            self.res_layers.append(ResidualUnit(filters, strides=strides))
-            for _ in range(reps - 1):
-                self.res_layers.append(ResidualUnit(filters))
-
-        # Head
-        self.gap = keras.layers.GlobalAveragePooling2D()
-        self.output_layer = keras.layers.Dense(n_classes, activation="softmax")
-
-    def call(self, inputs):
-        Z = self.conv1(inputs)
-        Z = self.bn1(Z)
-        Z = self.relu1(Z)
-        Z = self.pool1(Z)
-        for res_layer in self.res_layers:
-            Z = res_layer(Z)
-        Z = self.gap(Z)
-        return self.output_layer(Z)
 ```
 
 ---
 
-## ❌ Common Beginner Mistakes {#mistakes}
-
-**1. Not implementing get_config() for custom classes** ❌
-> Reality: If you save a model with custom components (losses, layers, metrics) and don't implement `get_config()`, loading will fail or hyperparameters will be lost. ALWAYS implement `get_config()` for any custom class you want to save.
-
-**2. Using Python mutable default arguments in __init__** ❌
-> Reality: `def __init__(self, layers=[])` creates ONE list shared across all instances! Use `layers=None` and `self.layers = layers or []` inside the method.
-
-**3. Not calling `super().__init__(**kwargs)` in custom layers** ❌
-> Reality: The base class `__init__` sets the layer's `name`, `dtype`, and other important attributes. Skipping it can cause subtle bugs, missing names in model summaries, and serialization issues.
-
-**4. Implementing custom metrics as functions when accumulation is needed** ❌
-> Reality: A metric function called on each batch only has batch-level information. To compute a true mean across an epoch (especially with variable batch sizes), you need a stateful metric class with `add_weight()`, `update_state()`, and `result()`.
-
-**5. Calling non-Keras Python control flow inside @tf.function** ❌
-> Reality: `if x > 0:` inside `@tf.function` checks the Python VALUE of x during tracing (not the tensor value). Use `tf.cond(x > 0, ...)` for conditional logic on tensors, or `@tf.function(input_signature=...)` to control retracing.
-
----
-
-## 🎤 Interview Q&A {#interview}
-
-**Q1: What's the difference between implementing a custom loss as a function vs. a class?**
-> **A:** A function is simpler but can't save hyperparameters with the model. A function closure (`create_huber(threshold=2.0)`) can be parameterized but loses the threshold at load time — you must specify it again. A class (subclassing `keras.losses.Loss`) implements `get_config()` which serializes all hyperparameters to JSON when saving, so they're automatically restored at load time.
-
-**Q2: What are the three methods you must implement for a custom Keras metric class?**
-> **A:** (1) `update_state(y_true, y_pred, sample_weight=None)`: called after each batch, accumulates running sums using `tf.Variable` added with `self.add_weight()`. (2) `result()`: called at the end of each epoch, returns `total / count` or similar. (3) `reset_state()`: inherited from base class, resets all weights to 0 between epochs (usually don't need to override). Also implement `get_config()` for saving.
-
-**Q3: What is the difference between the `build()` and `call()` methods in a custom layer?**
-> **A:** `build(input_shape)` is called ONCE the first time the layer is used — it creates the layer's weight variables. It's called lazily because the input shape (needed to determine weight shapes, e.g., kernel shape depends on `input_shape[-1]`) is only known when data flows through. `call(inputs)` is called for EVERY forward pass — it's the actual computation. Putting weight creation in `build()` instead of `__init__()` allows input-shape-dependent weights without knowing the shape ahead of time.
-
-**Q4: How does Keras handle train vs. test behavior in custom layers?**
-> **A:** The `call()` method receives an optional `training` boolean argument (passed automatically by Keras when the model is called with `training=True/False`). Your custom layer can use this to implement different behavior: `if training: (apply dropout) else: (pass through)`. This is how `Dropout` and `BatchNormalization` are implemented.
-
----
-
-## ⚡ One-Page Flash Card {#revision}
+## 🔗 7. How It All Connects {#connects}
 
 ```
-╔══════════════════════════════════════════════════════════════════════╗
-║         MODULE 2 — CUSTOM KERAS COMPONENTS FLASH CARD                 ║
-╠══════════════════════════════════════════════════════════════════════╣
-║                                                                        ║
-║  CUSTOM LOSS:                                                          ║
-║  Function: def loss(y_true, y_pred) → no hyperparameter saving       ║
-║  Class: subclass Loss, implement call() + get_config() → SAVES       ║
-║                                                                        ║
-║  CUSTOM METRIC:                                                        ║
-║  Stateless: function (batch-level only)                               ║
-║  Stateful: subclass Metric, add_weight() + update_state() + result() ║
-║  update_state() accumulates; result() = total/count                  ║
-║                                                                        ║
-║  CUSTOM LAYER:                                                         ║
-║  Subclass Layer, implement:                                           ║
-║    __init__: set hyperparams (don't create weights here!)            ║
-║    build(input_shape): add_weight() — called ONCE                    ║
-║    call(inputs, training=None): forward pass — called EVERY time     ║
-║    get_config(): serialize hyperparams for saving                    ║
-║                                                                        ║
-║  CUSTOM REGULARIZER: __call__() (not call!), get_config()            ║
-║                                                                        ║
-║  SAVING RULE:                                                          ║
-║  Any custom class → implement get_config() → return {**base, ...}   ║
-║  Load with: custom_objects={"ClassName": ClassName}                  ║
-║                                                                        ║
-╚══════════════════════════════════════════════════════════════════════╝
+MODEL TRAINING PIPELINE
+
+Input data (X_batch, y_batch)
+        │
+        ▼ forward pass
+  predictions = model(X_batch)
+        │
+        ├──────────────────────────────────────────────┐
+        ▼                                              ▼
+  MAIN LOSS                                     REGULARIZATION
+  (Custom or built-in)                          (added automatically from layer.losses)
+  e.g., HuberLoss(threshold=2.0)                e.g., MyL1Regularizer on weights
+        │                                              │
+        └──────────────────────────┬───────────────────┘
+                                   ▼
+                         total_loss = main_loss + reg_losses
+                                   │
+                                   ▼
+                    gradients = tape.gradient(total_loss, trainable_vars)
+                                   │
+                                   ▼
+                    optimizer.apply_gradients(zip(grads, vars))
+                                   │
+                                   ▼
+                    CONSTRAINT applied to weights (clip, normalize)
+                                   │
+                                   ▼
+                    METRIC updated: update_state(y_batch, predictions)
+                                   │
+                    [After full epoch: metric.result() → displayed]
+                    [metric.reset_state() → ready for next epoch]
 ```
 
 ---
 
+## ⚡ 8. Flash Card {#flashcard}
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║       MODULE 2 — CUSTOM KERAS COMPONENTS FLASH CARD          ║
+╠══════════════════════════════════════════════════════════════╣
+║                                                              ║
+║  HUBER LOSS:                                                 ║
+║    Small error (|e| ≤ threshold): loss = e²/2               ║
+║    Large error (|e| > threshold): loss = t×|e| - t²/2       ║
+║    Effect: like MSE for small errors, MAE for big ones       ║
+║    Benefit: less affected by outliers than pure MSE          ║
+║                                                              ║
+║  CUSTOM LOSS (function → class):                             ║
+║    Function: simple, but threshold lost on model save        ║
+║    Class: implement call() + get_config() → threshold SAVED  ║
+║                                                              ║
+║  get_config() pattern:                                       ║
+║    def get_config(self):                                     ║
+║        return {**super().get_config(), "param": self.param}  ║
+║                                                              ║
+║  CUSTOM METRIC:                                              ║
+║    Stateless (function): correct only for equal batch sizes  ║
+║    Stateful (class): add_weight() to accumulate across batches║
+║      update_state() → called per batch (accumulate)         ║
+║      result()       → called per epoch (total / count)      ║
+║      reset_state()  → called between epochs (reset to 0)    ║
+║                                                              ║
+║  REGULARIZER: uses __call__(), not call()                    ║
+║  CONSTRAINT:  applied AFTER each weight update               ║
+║  INITIALIZER: sets starting weight VALUES                    ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
 ---
 
-**🔗 Previous Module →** [01_TensorFlow_Quick_Tour_and_NumPy_Basics.md](01_TensorFlow_Quick_Tour_and_NumPy_Basics.md)  
+**🔗 Previous Module →** [01_TensorFlow_Quick_Tour_and_NumPy_Basics.md](01_TensorFlow_Quick_Tour_and_NumPy_Basics.md)
 **🔗 Next Module →** [03_Custom_Layers_and_Models.md](03_Custom_Layers_and_Models.md)

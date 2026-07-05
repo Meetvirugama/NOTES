@@ -131,6 +131,8 @@ model.compile(loss=HuberLoss(1.5), optimizer="adam", metrics=[HuberMetric(1.5)])
 
 ### Keras Model API Selection Guide
 
+![Chapter 12 Summary Dashboard](Visuals/10_summary_dashboard.png)
+
 | Criterion | Sequential API | Functional API | Subclassing API |
 |---|---|---|---|
 | **Layout Topology** | Single-input, single-output linear stacks | Direct Acyclic Graphs (DAG), shared layers | Dynamic, arbitrary structures (loops/branches) |
