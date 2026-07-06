@@ -90,15 +90,15 @@ print("Indices:", cat_indices.numpy())
 Once categories are mapped to index numbers, we can represent them as:
 1. **One-Hot Vectors**: A sparse binary vector of size $|V| + OOV$.
 
-   $$
+   ```math
    \mathbf{x}_{\text{one-hot}} = [0, 0, 0, 1, 0, 0, 0]
-   $$
+   ```
 
 2. **Embeddings**: A dense vector retrieved from a lookup table.
 
-   $$
+   ```math
    \mathbf{x}_{\text{embed}} = \text{Row}_i(\mathbf{W}_{\text{embed}})
-   $$
+   ```
 
 ### Computational Efficiency
 Multiplying a one-hot vector $[1, D]$ with a dense weight matrix $[D, M]$ is mathematically equivalent to looking up Row $i$ directly in the weight matrix. However, the matrix multiplication requires $O(D \times M)$ floating-point operations (FLOPs), while lookup is an $O(1)$ memory slice.
