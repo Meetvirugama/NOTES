@@ -66,10 +66,14 @@ Imagine a panel of four specialized experts analyzing a document. Expert A looks
 Kaiming He et al. introduced **ResNet** (Residual Networks) in 2015, solving the **vanishing/exploding gradient problem** in extremely deep networks (100+ layers).
 *   **The Degradation Problem**: In deep networks, accuracy saturates and then degrades. This is not due to overfitting, but because gradients vanish as they are backpropagated through dozens of layers, preventing early layers from updating.
 *   **Skip Connections (Shortcuts)**: ResNet introduces a bypass connection that feeds the input $x$ directly to the output of a block:
-    $$Output = F(x) + x$$
+    ```math
+    Output = F(x) + x
+    ```
     Where $F(x)$ represents the convolutional layers of the block.
 *   **Residual Learning**: Instead of forcing the convolutional layers to learn a complex mapping $H(x)$, they only need to learn the residual mapping:
-    $$F(x) = H(x) - x$$
+    ```math
+    F(x) = H(x) - x
+    ```
     If a layer is redundant, the network can easily set its weights to zero, causing the block to act as an identity mapping ($Output = x$).
 *   **Gradient Highway**: During backpropagation, gradients flow directly through the skip connection without being multiplied by layer weights, establishing a gradient highway straight to the early layers.
 
@@ -84,7 +88,9 @@ Imagine playing a game of "telephone" where a message is passed down a line of 1
 ### Common Interview Questions
 *   **Q: Mathematically, how do skip connections prevent vanishing gradients during backpropagation?**
     *   *Answer:* The output of a residual block is $y = F(x) + x$. By taking the derivative with respect to the input $x$, we get:
-        $$\frac{\partial y}{\partial x} = \frac{\partial F(x)}{\partial x} + 1$$
+        ```math
+        \frac{\partial y}{\partial x} = \frac{\partial F(x)}{\partial x} + 1
+        ```
         Even if the gradient of the convolution layers $\frac{\partial F(x)}{\partial x}$ vanishes to zero, the additive term $+1$ guarantees that a gradient of at least $1$ is always passed back, keeping the gradient flow alive all the way to the first layer.
 
 ---
@@ -121,7 +127,9 @@ François Chollet introduced **Xception** (Extreme Inception) in 2016, modifying
 2.  **Pointwise Convolution**: Applies a $1 \times 1$ convolution across all channels (combines channel patterns).
 
 This decouples the learning of spatial patterns from channel cross-correlations, significantly reducing computation and parameters:
-$$\text{Computational Cost Ratio} \approx \frac{1}{N} + \frac{1}{K^2}$$
+```math
+\text{Computational Cost Ratio} \approx \frac{1}{N} + \frac{1}{K^2}
+```
 Where $N$ is the channel depth and $K$ is the kernel size. For a $3 \times 3$ kernel, this cuts computation by approximately **9x** with almost no loss in accuracy.
 
 ### Real-World Example 🔍

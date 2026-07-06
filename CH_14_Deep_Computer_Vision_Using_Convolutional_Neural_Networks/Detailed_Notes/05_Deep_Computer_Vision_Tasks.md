@@ -57,6 +57,11 @@
 
 **The Task:** Given an image, predict: (1) the class of the object, AND (2) a bounding box around it.
 
+[FIGURE 28: Dual-Head Localization and Classification Network]
+*   **Caption**: Shows the shared feature extractor splitting into two heads.
+*   **Purpose**: Demonstrates the architecture of a localization network.
+![Dual-Head Localization and Classification Network](../Visuals/28_bounding_box_prediction.png)
+
 **The Architecture — Two Output Heads:**
 
 ```python
@@ -120,7 +125,9 @@ model.fit(X_train, {"class_output": y_class, "loc_output": y_bbox}, epochs=20)
 
 **The central metric for object detection accuracy:**
 
-$$\text{IoU} = \frac{\text{Area}(B_\text{pred} \cap B_\text{gt})}{\text{Area}(B_\text{pred} \cup B_\text{gt})}$$
+```math
+\text{IoU} = \frac{\text{Area}(B_\text{pred} \cap B_\text{gt})}{\text{Area}(B_\text{pred} \cup B_\text{gt})}
+```
 
 ```
                 Ground Truth (GT):                  Predicted:
@@ -204,6 +211,11 @@ Before NMS:                     After NMS:
 ---
 
 ## 🔍 Object Detection: Two-Stage vs One-Stage {#detection}
+
+[FIGURE 30: Multi-Object Detection with Class Labels]
+*   **Caption**: Detection of multiple objects with their bounding boxes and confidences.
+*   **Purpose**: Demonstrates the goal of object detection.
+![Multi-Object Detection with Class Labels](../Visuals/30_multiobject_detection.png)
 
 ### Two-Stage Detectors (R-CNN Family)
 
@@ -298,7 +310,9 @@ model = keras.models.Sequential([
 > 📊 **Graph 33:** The YOLO grid system. The image is divided into an SxS grid, and each cell predicts bounding boxes and class probabilities for objects whose center falls inside it.
 
 For S=7, B=2 bounding boxes, C=20 classes (PASCAL VOC):
-$$\text{Output tensor shape: } 7 \times 7 \times (B \times 5 + C) = 7 \times 7 \times 30$$
+```math
+\text{Output tensor shape: } 7 \times 7 \times (B \times 5 + C) = 7 \times 7 \times 30
+```
 
 Each cell predicts: `[cx, cy, w, h, conf]` for EACH of B boxes + `[P(class1), ..., P(classC)]`
 - `cx, cy`: center x, y RELATIVE to the grid cell (0 to 1)
@@ -312,11 +326,18 @@ Each cell predicts: `[cx, cy, w, h, conf]` for EACH of B boxes + `[P(class1), ..
 
 **The Loss Function (complex!):**
 
-$$\mathcal{L} = \lambda_\text{coord} \sum_{i=0}^{S^2} \sum_{j=0}^{B} \mathbb{1}_{ij}^\text{obj} \left[(x_i - \hat{x}_i)^2 + (y_i - \hat{y}_i)^2\right]$$
-$$+ \lambda_\text{coord} \sum_{i=0}^{S^2} \sum_{j=0}^{B} \mathbb{1}_{ij}^\text{obj} \left[(\sqrt{w_i} - \sqrt{\hat{w}_i})^2 + (\sqrt{h_i} - \sqrt{\hat{h}_i})^2\right]$$
-$$+ \text{(confidence terms)} + \text{(class probability terms)}$$
+```math
+\mathcal{L} = \lambda_\text{coord} \sum_{i=0}^{S^2} \sum_{j=0}^{B} \mathbb{1}_{ij}^\text{obj} \left[(x_i - \hat{x}_i)^2 + (y_i - \hat{y}_i)^2\right] \\
++ \lambda_\text{coord} \sum_{i=0}^{S^2} \sum_{j=0}^{B} \mathbb{1}_{ij}^\text{obj} \left[(\sqrt{w_i} - \sqrt{\hat{w}_i})^2 + (\sqrt{h_i} - \sqrt{\hat{h}_i})^2\right] \\
++ \text{(confidence terms)} + \text{(class probability terms)}
+```
 
 **Why sqrt for w and h?** Large boxes need less precision than small boxes. Squaring errors in linear space over-penalizes large box misses. Taking sqrt brings them to comparable scale.
+
+[FIGURE 34: YOLO Workflow]
+*   **Caption**: YOLO predicts all bounding boxes in one end-to-end pass.
+*   **Purpose**: Demonstrates the speed and simplicity of one-stage detection.
+![YOLO Workflow](../Visuals/34_yolo_workflow.png)
 
 **YOLO vs Faster R-CNN:**
 
@@ -339,7 +360,17 @@ $$+ \text{(confidence terms)} + \text{(class probability terms)}$$
 ![Semantic Segmentation](../Visuals/36_pixel_segmentation.png)
 > 📊 **Graph 36:** Semantic segmentation output. Every single pixel is classified into a category, creating a dense mask.
 
+[FIGURE 35: Original vs Segmentation Mask]
+*   **Caption**: Comparison of an original image and its semantic segmentation mask.
+*   **Purpose**: Shows the pixel-wise mapping of classes.
+![Original vs Segmentation Mask](../Visuals/35_original_vs_segmentation.png)
+
 **Architecture:** Encoder-Decoder with skip connections:
+
+[FIGURE 32: Encoder-Decoder Network Flow]
+*   **Caption**: Flow of downsampling and upsampling in a segmentation network.
+*   **Purpose**: Illustrates the architecture used for semantic segmentation.
+![Encoder-Decoder Network Flow](../Visuals/32_encoder_decoder_flow.png)
 
 ```
 Input: (224, 224, 3)
@@ -558,10 +589,9 @@ Input (572×572)
 
 ---
 
-## 📈 Chapter 14 Summary Dashboard
+## 📈 Chapter 14 Summary
 
-![Chapter 14 Summary Dashboard](../Visuals/24_summary_dashboard.png)
-> 📊 **Graph 24:** Comprehensive visual summary of all Chapter 14 concepts: CNN Architectures, Object Detection, Semantic Segmentation, and Advanced Techniques.
+This concludes the deep dive into Deep Computer Vision Tasks. We've explored classification, localization, object detection, and semantic segmentation, uncovering the power and flexibility of CNN architectures in modern applications.
 
 ---
 

@@ -86,13 +86,21 @@ Convolutional layers solve this by using two core concepts:
 When sliding a filter over an input of size $H_{in} \times W_{in}$ with stride $S$ and padding $P$:
 
 1.  **VALID Padding** (No padding, border pixels are ignored if they do not fit the stride):
-    $$H_{out} = \left\lfloor \frac{H_{in} - F_h}{S} \right\rfloor + 1$$
-    $$W_{out} = \left\lfloor \frac{W_{in} - F_w}{S} \right\rfloor + 1$$
+    ```math
+    H_{out} = \left\lfloor \frac{H_{in} - F_h}{S} \right\rfloor + 1
+    ```
+    ```math
+    W_{out} = \left\lfloor \frac{W_{in} - F_w}{S} \right\rfloor + 1
+    ```
 
 2.  **SAME Padding** (Zero-padding borders so the output size equals input size divided by stride):
-    $$H_{out} = \left\lceil \frac{H_{in}}{S} \right\rceil, \quad W_{out} = \left\lceil \frac{W_{in}}{S} \right\rceil$$
+    ```math
+    H_{out} = \left\lceil \frac{H_{in}}{S} \right\rceil, \quad W_{out} = \left\lceil \frac{W_{in}}{S} \right\rceil
+    ```
     The padding added horizontally ($P_w$) is:
-    $$P_w = \max(0, (W_{out} - 1) \times S + F_w - W_{in})$$
+    ```math
+    P_w = \max(0, (W_{out} - 1) \times S + F_w - W_{in})
+    ```
 
 ### Real-World Example 🔍
 Imagine a tiny magnifying glass (the kernel) sliding across a grid of numbers. At each position, you multiply the numbers under the glass by a fixed set of weights, sum them up, and write down the result. This sliding glass allows you to scan the whole page using the same magnifying settings.

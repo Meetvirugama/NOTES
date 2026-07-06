@@ -39,14 +39,14 @@
 | 25 | Pretrained Model Transfer Learning Workflow | 4 | [25_transfer_learning_workflow.png](Visuals/25_transfer_learning_workflow.png) |
 | 26 | Layer Freezing Timeline vs Fine-Tuning Steps | 4 | [26_frozen_vs_trainable.png](Visuals/26_frozen_vs_trainable.png) |
 | 27 | Classification vs. Localization Comparison | 5 | [27_classification_vs_localization.png](Visuals/27_classification_vs_localization.png) |
-| 28 | Dual-Head Bounding Box Prediction Network | 5 | [11_pooling_reduction.png](Visuals/11_pooling_reduction.png) |
+| 28 | Dual-Head Bounding Box Prediction Network | 5 | [28_bounding_box_prediction.png](Visuals/28_bounding_box_prediction.png) |
 | 29 | Faster R-CNN Detection Pipeline Stages | 5 | [29_object_detection_pipeline.png](Visuals/29_object_detection_pipeline.png) |
-| 30 | Multi-Object Detection with Class Labels | 5 | [29_object_detection_pipeline.png](Visuals/29_object_detection_pipeline.png) |
+| 30 | Multi-Object Detection with Class Labels | 5 | [30_multiobject_detection.png](Visuals/30_multiobject_detection.png) |
 | 31 | FCN Dense Layer to 1x1 Convolution Conversion | 5 | [31_fcn_conversion.png](Visuals/31_fcn_conversion.png) |
-| 32 | Symmetric U-Net Encoder-Decoder Flow | 5 | [25_transfer_learning_workflow.png](Visuals/25_transfer_learning_workflow.png) |
+| 32 | Symmetric U-Net Encoder-Decoder Flow | 5 | [32_encoder_decoder_flow.png](Visuals/32_encoder_decoder_flow.png) |
 | 33 | YOLO Grid Cell Mapping | 5 | [33_yolo_grid.png](Visuals/33_yolo_grid.png) |
-| 34 | YOLO Real-Time Single Forward Pass Workflow | 5 | [33_yolo_grid.png](Visuals/33_yolo_grid.png) |
-| 35 | Input Image vs. Semantic Segmentation Mask | 5 | [36_pixel_segmentation.png](Visuals/36_pixel_segmentation.png) |
+| 34 | YOLO Real-Time Single Forward Pass Workflow | 5 | [34_yolo_workflow.png](Visuals/34_yolo_workflow.png) |
+| 35 | Input Image vs. Semantic Segmentation Mask | 5 | [35_original_vs_segmentation.png](Visuals/35_original_vs_segmentation.png) |
 | 36 | Pixel-Wise Category Classification Map | 5 | [36_pixel_segmentation.png](Visuals/36_pixel_segmentation.png) |
 
 ---
