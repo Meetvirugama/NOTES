@@ -31,17 +31,7 @@ plt.rcParams.update({
     "savefig.facecolor": DARK, "savefig.dpi": 150,
 })
 
-DOWNLOADED = {
-    "01_visual_cortex_pipeline.png",
-    "03_biological_inspiration.png",
-    "12_lenet5_architecture.png",
-    "13_alexnet_architecture.png",
-    "15_inception_block.png",
-    "16_multiscale_extraction.png",
-    "17_vgg16_architecture.png",
-    "19_resnet_block.png",
-    "32_encoder_decoder_flow.png"
-}
+DOWNLOADED = set()
 
 def save(name):
     if name in DOWNLOADED:
@@ -53,12 +43,16 @@ def save(name):
     plt.close()
     print(f"  ✅  {name}")
 
+import matplotlib.patheffects as pe
+
 def node(ax, x, y, r=0.25, color=B1, label="", fontsize=8, alpha=0.9):
-    c = Circle((x, y), r, color=color, zorder=4, linewidth=1.2, ec="white", alpha=alpha)
+    c = Circle((x, y), r, color=color, zorder=4, linewidth=1.2, ec="white", alpha=alpha,
+               path_effects=[pe.withSimplePatchShadow(offset=(2, -2), shadow_rgbFace="black", alpha=0.5)])
     ax.add_patch(c)
     if label:
         ax.text(x, y, label, ha="center", va="center",
-                fontsize=fontsize, color="white", fontweight="bold", zorder=5)
+                fontsize=fontsize, color="white", fontweight="bold", zorder=5,
+                path_effects=[pe.withStroke(linewidth=2, foreground=DARK)])
 
 def arrow(ax, x1, y1, x2, y2, color=TX2, lw=1.2, alpha=0.5):
     ax.annotate("", xy=(x2, y2), xytext=(x1, y1),
@@ -66,13 +60,15 @@ def arrow(ax, x1, y1, x2, y2, color=TX2, lw=1.2, alpha=0.5):
                 zorder=2)
 
 def box(ax, x, y, w, h, color=B1, label="", fontsize=8.5, alpha=0.25, lw=1.5):
+    shadow = [pe.withSimplePatchShadow(offset=(2, -2), shadow_rgbFace="black", alpha=0.5)]
     r = FancyBboxPatch((x - w/2, y - h/2), w, h,
                        boxstyle="round,pad=0.04", fc=color, alpha=alpha,
-                       ec=color, lw=lw, zorder=2)
+                       ec=color, lw=lw, zorder=2, path_effects=shadow)
     ax.add_patch(r)
     if label:
         ax.text(x, y, label, ha="center", va="center",
-                fontsize=fontsize, color="white", fontweight="bold", zorder=3)
+                fontsize=fontsize, color="white", fontweight="bold", zorder=3,
+                path_effects=[pe.withStroke(linewidth=2.5, foreground=DARK)])
 
 # ══════════════════════════════════════════════════════════════════════════════
 # PLOT GENERATORS (1 to 36)
@@ -327,73 +323,79 @@ def plot_11_pooling_reduction():
 
 def plot_12_lenet5_architecture():
     print("[12] LeNet-5 Architecture")
-    fig, ax = plt.subplots(figsize=(11, 4.5))
-    ax.set_xlim(0, 11); ax.set_ylim(0, 5); ax.axis("off")
-    fig.suptitle("Figure 12: LeNet-5 Complete Architecture Flow (Yann LeCun, 1998)", fontsize=12, fontweight="bold", color=TX)
+    fig, ax = plt.subplots(figsize=(12, 5.5))
+    ax.set_xlim(0, 12); ax.set_ylim(0, 5.5); ax.axis("off")
+    fig.suptitle("Figure 12: LeNet-5 Complete Architecture Flow & Parameters", fontsize=12, fontweight="bold", color=TX)
     
     layers = [
-        (1.0, 2.5, 0.7, 2.5, "Input\n32x32", B1),
-        (2.6, 2.5, 0.8, 2.0, "Conv 5x5\n28x28x6", O1),
-        (4.0, 2.5, 0.8, 1.5, "Subsample\n14x14x6", G1),
-        (5.5, 2.5, 0.8, 1.2, "Conv 5x5\n10x10x16", O1),
-        (7.0, 2.5, 0.8, 0.9, "Subsample\n5x5x16", G1),
-        (8.4, 2.5, 0.6, 0.6, "Conv C5\n120", O1),
-        (9.5, 2.5, 0.5, 0.5, "FC F6\n84", P1),
-        (10.5, 2.5, 0.4, 0.4, "Out\n10", GOLD),
+        (1.0, 3.0, 0.7, 2.5, "Input\n32x32x1\n(0 Params)", B1),
+        (2.6, 3.0, 0.8, 2.0, "Conv 5x5\n28x28x6\n(156 Params)", O1),
+        (4.0, 3.0, 0.8, 1.5, "AvgPool\n14x14x6\n(0 Params)", G1),
+        (5.5, 3.0, 0.8, 1.2, "Conv 5x5\n10x10x16\n(2.4k Params)", O1),
+        (7.0, 3.0, 0.8, 0.9, "AvgPool\n5x5x16\n(0 Params)", G1),
+        (8.5, 3.0, 0.8, 0.6, "Conv C5\n120\n(48k Params)", O1),
+        (9.8, 3.0, 0.6, 0.5, "FC F6\n84\n(10k Params)", P1),
+        (11.0, 3.0, 0.5, 0.4, "Out\n10\n(850 Params)", GOLD),
     ]
     
     for x, y, w, h, lbl, col in layers:
-        box(ax, x, y, w, h, color=col, label=lbl, fontsize=7.5)
-        if x < 10.5:
-            arrow(ax, x + w/2 + 0.05, 2.5, x + w/2 + 0.3, 2.5, color=TX2)
+        box(ax, x, y, w, h, color=col, label=lbl, fontsize=7)
+        if x < 11.0:
+            arrow(ax, x + w/2 + 0.05, 3.0, x + w/2 + 0.3, 3.0, color=TX2)
+
+    ax.text(6.0, 1.0, "Math Example (Conv1 Params):\nParameters = (Kernel_H * Kernel_W * Input_Ch + 1 Bias) * Output_Ch\n= (5 * 5 * 1 + 1) * 6 = 156 Parameters",
+            color=O1, fontsize=9, fontweight="bold", ha="center", bbox=dict(facecolor=DARK, alpha=0.8, edgecolor=O1))
             
     save("12_lenet5_architecture.png")
 
 def plot_13_alexnet_architecture():
     print("[13] AlexNet Architecture")
-    fig, ax = plt.subplots(figsize=(11, 5))
-    ax.set_xlim(0, 11); ax.set_ylim(0, 5); ax.axis("off")
-    fig.suptitle("Figure 13: AlexNet Dual-GPU Split Architecture (2012)", fontsize=12, fontweight="bold", color=TX)
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.set_xlim(0, 12); ax.set_ylim(0, 6); ax.axis("off")
+    fig.suptitle("Figure 13: AlexNet Dual-GPU Architecture & Parameters (2012)", fontsize=12, fontweight="bold", color=TX)
     
-    # Dual GPU rows representation
     # GPU 1
-    ax.text(0.5, 3.8, "GPU 1 (Weights Split)", color=B1, fontweight="bold", fontsize=9)
-    box(ax, 1.2, 3.0, 0.8, 1.0, color=B1, label="Conv1\n96ch/2", fontsize=7.5)
-    box(ax, 2.6, 3.0, 0.8, 0.9, color=B1, label="Conv2\n256ch/2", fontsize=7.5)
-    box(ax, 4.0, 3.0, 0.8, 0.8, color=B1, label="Conv3\n384ch/2", fontsize=7.5)
-    box(ax, 5.4, 3.0, 0.8, 0.8, color=B1, label="Conv4\n384ch/2", fontsize=7.5)
-    box(ax, 6.8, 3.0, 0.8, 0.8, color=B1, label="Conv5\n256ch/2", fontsize=7.5)
+    ax.text(0.5, 4.3, "GPU 1 (Weights Split)", color=B1, fontweight="bold", fontsize=9)
+    box(ax, 1.2, 3.5, 0.8, 1.0, color=B1, label="Conv1\n48ch\n(17k)", fontsize=7)
+    box(ax, 2.6, 3.5, 0.8, 0.9, color=B1, label="Conv2\n128ch\n(154k)", fontsize=7)
+    box(ax, 4.0, 3.5, 0.8, 0.8, color=B1, label="Conv3\n192ch\n(442k)", fontsize=7)
+    box(ax, 5.4, 3.5, 0.8, 0.8, color=B1, label="Conv4\n192ch\n(331k)", fontsize=7)
+    box(ax, 6.8, 3.5, 0.8, 0.8, color=B1, label="Conv5\n128ch\n(221k)", fontsize=7)
     
     # GPU 2
-    ax.text(0.5, 1.0, "GPU 2 (Weights Split)", color=G1, fontweight="bold", fontsize=9)
-    box(ax, 1.2, 1.8, 0.8, 1.0, color=G1, label="Conv1\n96ch/2", fontsize=7.5)
-    box(ax, 2.6, 1.8, 0.8, 0.9, color=G1, label="Conv2\n256ch/2", fontsize=7.5)
-    box(ax, 4.0, 1.8, 0.8, 0.8, color=G1, label="Conv3\n384ch/2", fontsize=7.5)
-    box(ax, 5.4, 1.8, 0.8, 0.8, color=G1, label="Conv4\n384ch/2", fontsize=7.5)
-    box(ax, 6.8, 1.8, 0.8, 0.8, color=G1, label="Conv5\n256ch/2", fontsize=7.5)
+    ax.text(0.5, 1.5, "GPU 2 (Weights Split)", color=G1, fontweight="bold", fontsize=9)
+    box(ax, 1.2, 2.3, 0.8, 1.0, color=G1, label="Conv1\n48ch\n(17k)", fontsize=7)
+    box(ax, 2.6, 2.3, 0.8, 0.9, color=G1, label="Conv2\n128ch\n(154k)", fontsize=7)
+    box(ax, 4.0, 2.3, 0.8, 0.8, color=G1, label="Conv3\n192ch\n(442k)", fontsize=7)
+    box(ax, 5.4, 2.3, 0.8, 0.8, color=G1, label="Conv4\n192ch\n(331k)", fontsize=7)
+    box(ax, 6.8, 2.3, 0.8, 0.8, color=G1, label="Conv5\n128ch\n(221k)", fontsize=7)
     
     # Shared heads
-    box(ax, 8.5, 3.0, 0.8, 0.8, color=P1, label="FC1\n2048", fontsize=7.5)
-    box(ax, 8.5, 1.8, 0.8, 0.8, color=P1, label="FC2\n2048", fontsize=7.5)
-    box(ax, 9.8, 2.4, 0.8, 0.8, color=GOLD, label="Output\n1000", fontsize=7.5)
+    box(ax, 8.5, 3.5, 0.8, 0.8, color=P1, label="FC1\n2048\n(37M)", fontsize=7)
+    box(ax, 8.5, 2.3, 0.8, 0.8, color=P1, label="FC2\n2048\n(16M)", fontsize=7)
+    box(ax, 10.2, 2.9, 0.8, 0.8, color=GOLD, label="Output\n1000\n(4M)", fontsize=7)
     
     # Connections
     for x_idx in [1.2, 2.6, 4.0, 5.4]:
-        arrow(ax, x_idx+0.4, 3.0, x_idx+1.0, 3.0, color=B1)
-        arrow(ax, x_idx+0.4, 1.8, x_idx+1.0, 1.8, color=G1)
+        arrow(ax, x_idx+0.4, 3.5, x_idx+1.0, 3.5, color=B1)
+        arrow(ax, x_idx+0.4, 2.3, x_idx+1.0, 2.3, color=G1)
+    
     # Cross connections in Conv3
-    arrow(ax, 2.6+0.4, 3.0, 4.0-0.4, 1.8, color=B1, lw=0.8, alpha=0.4)
-    arrow(ax, 2.6+0.4, 1.8, 4.0-0.4, 3.0, color=G1, lw=0.8, alpha=0.4)
+    arrow(ax, 2.6+0.4, 3.5, 4.0-0.4, 2.3, color=B1, lw=0.8, alpha=0.4)
+    arrow(ax, 2.6+0.4, 2.3, 4.0-0.4, 3.5, color=G1, lw=0.8, alpha=0.4)
     
     # To FC
-    arrow(ax, 6.8+0.4, 3.0, 8.5-0.4, 3.0, color=B1)
-    arrow(ax, 6.8+0.4, 1.8, 8.5-0.4, 1.8, color=G1)
-    arrow(ax, 6.8+0.4, 3.0, 8.5-0.4, 1.8, color=B1, lw=0.8, alpha=0.4)
-    arrow(ax, 6.8+0.4, 1.8, 8.5-0.4, 3.0, color=G1, lw=0.8, alpha=0.4)
+    arrow(ax, 6.8+0.4, 3.5, 8.5-0.4, 3.5, color=B1)
+    arrow(ax, 6.8+0.4, 2.3, 8.5-0.4, 2.3, color=G1)
+    arrow(ax, 6.8+0.4, 3.5, 8.5-0.4, 2.3, color=B1, lw=0.8, alpha=0.4)
+    arrow(ax, 6.8+0.4, 2.3, 8.5-0.4, 3.5, color=G1, lw=0.8, alpha=0.4)
     
     # FC to output
-    arrow(ax, 8.5+0.4, 3.0, 9.8-0.4, 2.4, color=P1)
-    arrow(ax, 8.5+0.4, 1.8, 9.8-0.4, 2.4, color=P1)
+    arrow(ax, 8.5+0.4, 3.5, 10.2-0.4, 2.9, color=P1)
+    arrow(ax, 8.5+0.4, 2.3, 10.2-0.4, 2.9, color=P1)
+
+    ax.text(6.0, 0.7, "Total Parameters: ~60 Million (Most parameters are in the Dense FC layers!)",
+            color=O1, fontsize=9, fontweight="bold", ha="center", bbox=dict(facecolor=DARK, alpha=0.8, edgecolor=O1))
     
     save("13_alexnet_architecture.png")
 
@@ -473,25 +475,28 @@ def plot_16_multiscale_extraction():
 
 def plot_17_vgg16_architecture():
     print("[17] VGG16 Architecture")
-    fig, ax = plt.subplots(figsize=(10, 4.5))
-    ax.set_xlim(0, 10); ax.set_ylim(0, 5); ax.axis("off")
-    fig.suptitle("Figure 17: VGG-16 Deep Network Channel Progression", fontsize=12, fontweight="bold", color=TX)
+    fig, ax = plt.subplots(figsize=(12, 5.5))
+    ax.set_xlim(0, 12); ax.set_ylim(0, 5.5); ax.axis("off")
+    fig.suptitle("Figure 17: VGG-16 Deep Network Channel Progression & Math", fontsize=12, fontweight="bold", color=TX)
     
     vgg_blocks = [
-        (1.0, 2.5, 0.8, 3.0, "Input\n224x224x3", B1),
-        (2.3, 2.5, 0.8, 2.6, "Block 1\n2x Conv\n64 filters", O1),
-        (3.6, 2.5, 0.8, 2.2, "Block 2\n2x Conv\n128 filters", O1),
-        (4.9, 2.5, 0.8, 1.8, "Block 3\n3x Conv\n256 filters", O1),
-        (6.2, 2.5, 0.8, 1.4, "Block 4\n3x Conv\n512 filters", O1),
-        (7.5, 2.5, 0.8, 1.0, "Block 5\n3x Conv\n512 filters", O1),
-        (8.8, 2.5, 0.6, 0.6, "FC\n4096", P1),
-        (9.7, 2.5, 0.4, 0.4, "Out\n1000", GOLD)
+        (1.0, 3.0, 0.8, 3.0, "Input\n224x224x3\n(0 Params)", B1),
+        (2.3, 3.0, 0.8, 2.6, "Block 1\n2x Conv\n64 filters\n(36k Params)", O1),
+        (3.6, 3.0, 0.8, 2.2, "Block 2\n2x Conv\n128 filters\n(221k Params)", O1),
+        (4.9, 3.0, 0.8, 1.8, "Block 3\n3x Conv\n256 filters\n(1.4M Params)", O1),
+        (6.2, 3.0, 0.8, 1.4, "Block 4\n3x Conv\n512 filters\n(7M Params)", O1),
+        (7.5, 3.0, 0.8, 1.0, "Block 5\n3x Conv\n512 filters\n(7M Params)", O1),
+        (8.8, 3.0, 0.6, 0.6, "FC 1+2\n4096\n(123M Params)", P1),
+        (10.0, 3.0, 0.4, 0.4, "Out\n1000\n(4M Params)", GOLD)
     ]
     
     for x, y, w, h, lbl, col in vgg_blocks:
         box(ax, x, y, w, h, color=col, label=lbl, fontsize=7)
-        if x < 9.7:
-            arrow(ax, x + w/2 + 0.05, 2.5, x + w/2 + 0.4, 2.5, color=TX2)
+        if x < 10.0:
+            arrow(ax, x + w/2 + 0.05, 3.0, x + w/2 + 0.4, 3.0, color=TX2)
+
+    ax.text(6.0, 1.0, "Math Example (VGG Stacking Rule):\nOne 5x5 Conv = 25 params. Two stacked 3x3 Convs = 3x3 + 3x3 = 18 params.\nConclusion: 28% fewer parameters with identical receptive field!",
+            color=O1, fontsize=9, fontweight="bold", ha="center", bbox=dict(facecolor=DARK, alpha=0.8, edgecolor=O1))
             
     save("17_vgg16_architecture.png")
 
