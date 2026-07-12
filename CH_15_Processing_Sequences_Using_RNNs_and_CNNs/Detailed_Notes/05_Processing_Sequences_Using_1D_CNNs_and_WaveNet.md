@@ -4,226 +4,400 @@
 ---
 
 ## 📌 Table of Contents
-1. [Start Here: The Big Picture](#big-picture)
-2. [Replacing RNNs with 1D Convolutions](#conv1d-foundations)
-3. [Causal Padding Mechanics & ASCII Visuals](#causal-padding)
-4. [Hybrid CNN-RNN Architectures & Stride Math](#hybrid-architectures)
-5. [The WaveNet Architecture & Dilated Math](#wavenet)
+1. [The Big Picture](#big-picture)
+2. [1D Convolutions for Sequences](#conv1d-foundations)
+3. [Causal Padding](#causal-padding)
+4. [Hybrid CNN-RNN Architectures](#hybrid-architectures)
+5. [WaveNet and Dilated Convolutions](#wavenet)
 6. [WaveNet Gated Activation & Residual Blocks](#wavenet-details)
-7. [Common Beginner Mistakes](#mistakes)
-8. [Interview Q&A](#interview)
-9. [⚡ One-Page Flash Card](#revision)
+7. [Bidirectional RNNs / BiLSTMs](#bilstm)
+8. [Stacked LSTMs](#stacked-lstm)
+9. [Stateful LSTMs](#stateful-lstm)
+10. [Temporal Convolutional Networks (TCN)](#tcn)
+11. [Common Mistakes](#mistakes)
+12. [Interview Q&A](#interview)
+13. [⚡ Flash Card](#revision)
 
 ---
 
-## 🌍 Start Here: The Big Picture {#big-picture}
+## 🌍 1. The Big Picture {#big-picture}
 
-> **TL;DR:** While RNNs process sequences step-by-step, 1D Convolutional Neural Networks (CNNs) process windows of sequence steps in parallel, making training significantly faster. By stacking 1D convolutions with causal padding and exponential dilation rates (WaveNet), we can capture long-term dependencies across thousands of steps with a highly efficient receptive field.
+> **TL;DR:** RNNs process one step at a time. 1D CNNs process a window of steps in parallel — much faster. WaveNet stacks dilated 1D CNNs to see a huge portion of the sequence with very few layers.
 
-**The Real-World Analogy 🍕:**
-Imagine you are a security guard reviewing a 24-hour video surveillance tape. An RNN is like watching the tape in real-time, frame by frame—it is slow but captures transitions. A 1D CNN is like laying out the tape on a table and looking at 5-minute clips in parallel. A dilated WaveNet is like looking at frame 1, frame 2, frame 4, frame 8, frame 16... allowing you to scan the entire 24-hour timeline in seconds while maintaining a clear view of how events connect.
+**Analogy 📷:**
+| Architecture | What it is like |
+| :--- | :--- |
+| RNN | Watching a video frame by frame, in real time |
+| 1D CNN | Laying the tape flat and scanning 5-minute clips side by side |
+| WaveNet | Looking at frame 1, 2, 4, 8, 16 — scanning the full 24-hour tape in seconds |
+
+**When to use what:**
+
+| Task | Best Choice |
+| :--- | :--- |
+| Short sequences, simple patterns | Simple RNN / GRU |
+| Long sequences, speed matters | 1D CNN or TCN |
+| Audio / raw waveform generation | WaveNet |
+| Hybrid: long input + recurrent output | Conv1D + GRU/LSTM |
 
 ---
 
-## 🔍 1. Replacing RNNs with 1D Convolutions {#conv1d-foundations}
+## 🔍 2. 1D Convolutions for Sequences {#conv1d-foundations}
 
-For many sequence tasks, a 1D Convolutional layer can slide a kernel over a sequence of inputs, extracting local temporal features.
-* **Why use 1D Convolutions?** 1D convolutions process sequence steps in parallel. Unlike RNNs, which must calculate step $t$ before starting step $t+1$, 1D CNNs run highly parallel operations on GPUs, leading to massive speedups during training.
-* **1D Conv Math**: A 1D convolutional kernel of size $K$ slides along the time dimension, computing dot products of size $K \times d$ (where $d$ is the input feature dimension).
+> **TL;DR:** A 1D Conv slides a kernel of size $K$ along the time axis. Every output step is computed independently — fully parallel on GPU.
+
+![WaveNet Architecture](../Visuals/11_wavenet_architecture.png)
+> 📊 **Graph 11:** A stack of 1D dilated causal convolutions. Each layer doubles the dilation rate: 1, 2, 4, 8 — expanding how far back each output can see.
+
+**Kernel math:**
+
+$$y_t = \sum_{k=0}^{K-1} w_k \cdot x_{t-k}$$
+
+**Why prefer this over RNNs?**
+
+| Property | RNN | 1D CNN |
+| :--- | :--- | :--- |
+| Computation | Sequential (step by step) | Parallel (all at once) |
+| Training speed | Slow | Fast |
+| Long-range memory | Needs LSTM/GRU | Needs dilation |
+| Gradient stability | Vanishing gradients | Stable |
 
 ---
 
-## 🔍 2. Causal Padding Mechanics & ASCII Visuals {#causal-padding}
+## 🔍 3. Causal Padding {#causal-padding}
 
-In standard computer vision, a 2D convolution pads all borders with zeros. In sequential forecasting, this is a fatal bug: padding the right side of a time step allows the kernel to look into future steps to predict the past, causing **data leakage**.
+> **TL;DR:** Causal padding adds zeros only on the left side of the sequence. This ensures the output at step $t$ only uses inputs up to and including step $t$ — no future leakage.
 
-To prevent this, sequential 1D CNNs use **Causal Padding**.
-* **Definition**: Causal padding pads the input sequence with zeros **only on the left side**.
-* **Effect**: This shifts the kernel's receptive window so that the output at step $t$ is computed using only inputs from step $t$ and earlier ($t-1, t-2, \dots$), ensuring the network cannot look into the future.
+**The problem with standard padding:**
 
-### ASCII Gating Alignment (Kernel Size K=3)
 ```
-Input Sequence:   [  0  ] [  0  ] [ x_1 ] [ x_2 ] [ x_3 ] [ x_4 ]
-                    │       │       │       │       │       │
-                    └───────┴───────┬───────┘       │       │
-                                    ▼               │       │
-Output Sequence:                  [ y_1 ] ──────────┼───────┘
-                                                    ▼
-                                                  [ y_2 ] (depends only on x_2, x_1, 0)
+Standard padding adds zeros on BOTH sides:
+[0] [x1] [x2] [x3] [x4] [0]
+              ↑
+         Output at x2 can "see" x3, x4 → DATA LEAKAGE ❌
 ```
+
+**Causal padding (left-only zeros):**
+
+```
+[0] [0] [x1] [x2] [x3] [x4]
+          ↑
+     y1 depends only on x1, 0, 0  ✅
+```
+
+In Keras, set `padding="causal"` — it handles the zero-padding automatically.
+
+> 💡 **Rule:** Any model that forecasts the future MUST use causal padding. Using `same` or `valid` padding on sequence data is almost always a bug.
 
 ---
 
-## 🔍 3. Hybrid CNN-RNN Architectures & Stride Math {#hybrid-architectures}
+## 🔍 4. Hybrid CNN-RNN Architectures {#hybrid-architectures}
 
-If a sequence is extremely long (e.g. thousands of steps), recurrent layers still struggle due to memory consumption and computational cost. We can build a hybrid network that uses a 1D convolution to downsample the sequence before feeding it to recurrent layers.
+> **TL;DR:** Use Conv1D with stride > 1 to shorten the sequence first, then pass the result to GRU/LSTM layers. This cuts the number of recurrent steps and saves memory.
 
-### Downsampling Shape Mathematics
-When using `padding="valid"` and a stride of $S$, the output length $N_{\text{out}}$ is computed from the input sequence length $N_{\text{in}}$ and kernel size $K$ using the formula:
+**Downsampling formula** (with `padding="valid"` and stride $S$):
 
 $$N_{\text{out}} = \left\lfloor \frac{N_{\text{in}} - K}{S} \right\rfloor + 1$$
 
-#### Shape Trace Example:
-* Input sequence length: $N_{\text{in}} = 50$ steps.
-* Conv1D layer: `filters=20, kernel_size=4, strides=2, padding="valid"`.
-* Calculation:
-  $$N_{\text{out}} = \left\lfloor \frac{50 - 4}{2} \right\rfloor + 1 = \lfloor 23.0 \rfloor + 1 = 24 \text{ steps}$$
-* The sequence is downsampled from 50 steps to 24 steps, reducing the temporal dimensions by over 50%. The subsequent recurrent layers (LSTMs or GRUs) only need to unroll over 24 steps, training faster and capturing longer-term patterns.
+**Worked Example:**
+- Input: 50 time steps, kernel size 4, stride 2
+- $N_{\text{out}} = \lfloor(50 - 4) / 2\rfloor + 1 = 24$ steps
+- Result: 50 steps → 24 steps (52% reduction before the RNN)
 
 ```python
 from tensorflow import keras
 
-# Hybrid Model: 1D Conv Preprocessor + GRU layers
-model_hybrid = keras.models.Sequential([
-    # Input shape: [None, 1] (variable length sequences, 1 feature)
-    keras.layers.Conv1D(filters=20, kernel_size=4, strides=2, padding="valid",
-                        input_shape=[None, 1]),
+model = keras.models.Sequential([
+    # Step 1: downsample from 50 → 24 steps
+    keras.layers.Conv1D(filters=20, kernel_size=4, strides=2,
+                        padding="valid", input_shape=[None, 1]),
+    # Step 2: recurrent layers now see 24 steps, not 50
     keras.layers.GRU(20, return_sequences=True),
     keras.layers.GRU(20, return_sequences=True),
     keras.layers.TimeDistributed(keras.layers.Dense(10))
 ])
 ```
 
+> ⚠️ **Warning:** When using `padding="valid"` + stride, the output length is shorter than the target. You must crop the targets to match:
+> ```python
+> Y_train_cropped = Y_train[:, 3:]  # adjust index to match output length
+> ```
+
 ---
 
-## 🔍 4. The WaveNet Architecture & Dilated Math {#wavenet}
+## 🔍 5. WaveNet and Dilated Convolutions {#wavenet}
 
-Proposed by Aaron van den Oord et al. at Google DeepMind in 2016 for raw audio generation, **WaveNet** stacks causal 1D convolutional layers with growing **Dilation Rates**.
+> **TL;DR:** WaveNet stacks causal 1D convolutions with dilation rates that double at each layer (1, 2, 4, 8...). This gives the top layers a very large receptive field while keeping parameter count small.
 
 ![WaveNet Architecture](../Visuals/11_wavenet_architecture.png)
-> 📊 **Graph 11:** WaveNet dilated convolutions. Dilation rates double at each layer (1, 2, 4, 8), expanding the receptive field exponentially.
+> 📊 **Graph 11:** Dilation rates expand the receptive field exponentially. Layer 1 sees 2 steps, layer 2 sees 4, layer 3 sees 8, layer 4 sees 16.
 
-### Dilated Convolutions
-A dilated convolution is a convolution where the kernel has gaps. A dilation rate $d$ means the kernel elements are spaced $d$ steps apart.
+### Dilated Convolution Formula
 
-#### Mathematical Equation
-For an input sequence $\mathbf{x}$, the output $\mathbf{y}_t$ of a 1D dilated convolution with kernel size $K$ and dilation rate $d$ is:
+A dilation rate $d$ spaces the kernel elements $d$ steps apart:
 
-$$\mathbf{y}_t = \sum_{\tau=0}^{K-1} \mathbf{w}_\tau \cdot \mathbf{x}_{t - d \cdot \tau}$$
+$$y_t = \sum_{\tau=0}^{K-1} w_\tau \cdot x_{t - d \cdot \tau}$$
 
-Where $\mathbf{w}_\tau$ are the learnable filter weights. When $d=1$, this simplifies to a standard causal 1D convolution.
+At $d = 1$ this is a normal causal convolution. At $d = 4$, each kernel tap jumps 4 steps.
 
-#### Receptive Field Calculations
-For a stack of $L$ causal convolutional layers with kernel size $K$, where layer $l$ has dilation rate $d_l$, the total unrolled receptive field $R$ (in time steps) is:
+### Receptive Field
 
-$$R = 1 + (K - 1) \sum_{l=1}^L d_l$$
+For $L$ layers with kernel size $K$ and dilation $d_l$:
 
-For a simplified WaveNet block where $K=2$ and dilation rates grow as powers of two ($d_l = 2^{l-1}$ for $l=1, \dots, L$):
+$$R = 1 + (K-1) \sum_{l=1}^{L} d_l$$
 
-$$R = 1 + (2 - 1) \sum_{l=1}^L 2^{l-1} = 1 + (2^L - 1) = 2^L \text{ steps}$$
+**Worked example** — $K=2$, dilations $\{1, 2, 4, 8\}$ repeated twice:
 
-If this entire block of $L$ layers is repeated $B$ times (to further expand the context without losing fine resolution), the total receptive field becomes:
+$$R = 1 + 2 \times (1 + 2 + 4 + 8) = 1 + 30 = 31 \text{ steps}$$
 
-$$R = 1 + B \cdot (K - 1) \sum_{l=1}^L d_l$$
+With only 8 layers and kernel size 2, the model can see 31 steps back in history.
 
-For a network with kernel size $K=2$ and dilations $1, 2, 4, 8$ ($L=4$) repeated $B=2$ times (as implemented in the Keras code below):
+### Keras Implementation
 
-$$R = 1 + 2 \cdot (2 - 1) \cdot (1 + 2 + 4 + 8) = 1 + 2 \cdot 15 = 31 \text{ steps}$$
-
-* **Exponential Expansion**: The receptive field grows exponentially with depth, while the number of parameters only grows linearly with the number of layers, making it highly efficient.
-* **Benefit**: The network can capture dependencies across thousands of steps with only a few layers, without losing resolution and using very few parameters.
-
-### Keras WaveNet Implementation
 ```python
-# Custom metric to check MSE only on the final step's multi-step forecast
 def last_time_step_mse(Y_true, Y_pred):
     return keras.metrics.mean_squared_error(Y_true[:, -1], Y_pred[:, -1])
 
-# Simplified WaveNet Model
 model_wavenet = keras.models.Sequential()
 model_wavenet.add(keras.layers.InputLayer(input_shape=[None, 1]))
 
-# Stack dilated causal convolutions: double the dilation rate, then repeat the block
-for rate in (1, 2, 4, 8) * 2: # yields dilation rates: 1, 2, 4, 8, 1, 2, 4, 8
+# dilations: 1, 2, 4, 8, 1, 2, 4, 8  (two full blocks)
+for rate in (1, 2, 4, 8) * 2:
     model_wavenet.add(keras.layers.Conv1D(
-        filters=20, 
-        kernel_size=2, 
-        padding="causal",
-        activation="relu", 
+        filters=20, kernel_size=2,
+        padding="causal", activation="relu",
         dilation_rate=rate
     ))
 
-# 1x1 Convolution output projection layer (10 output values)
+# 1x1 Conv to project to output size
 model_wavenet.add(keras.layers.Conv1D(filters=10, kernel_size=1))
-
-model_wavenet.compile(loss="mse", optimizer="adam", metrics=[last_time_step_mse])
+model_wavenet.compile(loss="mse", optimizer="adam",
+                      metrics=[last_time_step_mse])
 ```
 
 ---
 
-## 🔍 5. WaveNet Gated Activation & Residual Blocks {#wavenet-details}
+## 🔍 6. WaveNet Gated Activation & Residual Blocks {#wavenet-details}
 
-The complete WaveNet architecture published by Google DeepMind includes two critical features omitted in the simplified sequential model:
+> **TL;DR:** The full WaveNet paper replaces ReLU with a gated activation and adds residual + skip connections for deeper, more stable networks.
 
-### 1. Gated Activation Unit
-Instead of using standard ReLU activations, WaveNet uses a gated activation mechanism (similar to LSTM/GRU gates) to control signal flow through layers:
+### Gated Activation
 
-$$\mathbf{z} = \tanh\left(\mathbf{W}_{f,k} * \mathbf{x}\right) \otimes \sigma\left(\mathbf{W}_{g,k} * \mathbf{x}\right)$$
+$$z = \tanh(W_f * x) \otimes \sigma(W_g * x)$$
 
-Where:
-* $*$ represents the 1D causal dilated convolution.
-* $\mathbf{W}_{f,k}$ is the filter weight matrix at layer $k$.
-* $\mathbf{W}_{g,k}$ is the gate weight matrix at layer $k$.
-* $\otimes$ is element-wise multiplication.
+| Part | Role |
+| :--- | :--- |
+| $\tanh(W_f * x)$ | Filter — what information to pass through |
+| $\sigma(W_g * x)$ | Gate — how much of that information to let through |
+| $\otimes$ | Element-wise multiplication |
 
-### 2. Residual and Skip Connections
-* **Residual Connection**: Adds the layer input directly to the output of the gated activation block before passing it to the next layer.
-* **Skip Connection**: Outputs from all hidden layers skip directly to the end of the network, bypassing intermediate stacks to be summed together before the final output projection.
+This is the same gating idea used in LSTM and GRU.
+
+### Residual and Skip Connections
+
+```
+Input ──────────────────────────────┐
+  │                                 │
+  ▼                                 │ (residual add)
+Gated Conv ──► (Skip to output) ◄──┘
+  │
+  ▼
+Next Layer
+```
+
+- **Residual:** adds the input of the block directly to its output, allowing gradients to flow past any layer.
+- **Skip:** every layer sends its output directly to the final sum before the output projection. This lets shallow features contribute directly to the prediction.
 
 ---
 
-## ❌ Common Beginner Mistakes {#mistakes}
+## 🔍 7. Bidirectional RNNs / BiLSTMs {#bilstm}
 
-**1. Forgetting to crop targets when using `padding="valid"` in pre-processing convolutions** ❌
-> **Why it fails:** If your 1D Conv layer uses `padding="valid"` and a stride of 2, the output length is shorter than the input sequence length. If you attempt to compute the loss directly against your original un-cropped targets $\mathbf{Y}$, Keras will crash with a shape mismatch error.
-> **The Fix:** Crop the target sequences to match the downsampled output sequence of the convolutional layer:
+> **TL;DR:** A BiLSTM runs two LSTMs — one forward, one backward. The hidden states are concatenated, giving each output access to both past and future context.
+
+![LSTM Cell](../Visuals/09_lstm_cell.png)
+> 📊 **Diagram 09:** The LSTM cell that forms each directional pass in a BiLSTM.
+
+$$h_t = [\vec{h}_t,\ \overleftarrow{h}_t]$$
+
+**Use cases:**
+- Named Entity Recognition (NER)
+- Speech recognition
+- Text classification
+
+**Do NOT use for live forecasting.** The backward pass requires future values that do not exist yet.
+
 ```python
-# Crop targets to match the final sequence steps output by the CNN
-Y_train_cropped = Y_train[:, 3:] # adjust crop slice to match model shape output
+keras.layers.Bidirectional(keras.layers.LSTM(64, return_sequences=True))
 ```
+
+---
+
+## 🔍 8. Stacked LSTMs {#stacked-lstm}
+
+> **TL;DR:** Stack multiple LSTM layers so lower layers extract simple patterns and higher layers combine them into longer-range abstractions.
+
+![Deep RNN Unrolled](../Visuals/07_deep_rnn_unrolled.png)
+> 📊 **Diagram 07:** Multiple LSTM layers stacked vertically. Each layer's output sequence feeds into the next layer as its input.
+
+**Architecture:**
+
+```
+Input
+  ↓
+LSTM Layer 1  (return_sequences=True)
+  ↓
+LSTM Layer 2  (return_sequences=True)
+  ↓
+LSTM Layer 3  (return_sequences=False or True depending on task)
+  ↓
+Dense Output
+```
+
+- Every layer except the last needs `return_sequences=True`.
+- Lower layers → short patterns (individual beats in audio).
+- Higher layers → long patterns (rhythmic phrases in audio).
+
+---
+
+## 🔍 9. Stateful LSTMs {#stateful-lstm}
+
+> **TL;DR:** A stateful LSTM carries its hidden state from the end of one batch to the start of the next. This allows the model to remember information across batch boundaries.
+
+**Default (stateless):** hidden state resets to zero at the start of every batch.
+
+**Stateful:** final state of batch $n$ → initial state of batch $n+1$.
+
+| Setting | When to use |
+| :--- | :--- |
+| Stateless (default) | Most tasks, randomly sampled batches |
+| Stateful | Continuous streams: sensor feeds, audio streams, ECG |
+
+**Rules for stateful LSTM:**
+1. Set `stateful=True` in the layer.
+2. Provide a fixed `batch_size` (cannot vary).
+3. Set `shuffle=False` — batches must stay in order.
+4. Manually call `model.reset_states()` at the end of each epoch.
+
+```python
+model = keras.models.Sequential([
+    keras.layers.LSTM(32, stateful=True,
+                      batch_input_shape=[batch_size, None, 1],
+                      return_sequences=True),
+    keras.layers.Dense(1)
+])
+```
+
+---
+
+## 🔍 10. Temporal Convolutional Networks (TCN) {#tcn}
+
+> **TL;DR:** A TCN combines causal convolutions, dilated convolutions, and residual blocks into a single architecture. It is fully parallel and has stable gradients at any depth.
+
+**TCN vs LSTM comparison:**
+
+| Property | LSTM | TCN |
+| :--- | :--- | :--- |
+| Computation | Sequential | Parallel |
+| Gradient stability | Can vanish/explode | Always stable |
+| Long-range memory | Gating required | Dilation required |
+| Training speed | Slow | Fast |
+| Real-time streaming | Yes (stateful) | Yes (causal) |
+
+**TCN block:**
+
+```
+Input
+  ├──────────────────────────────┐
+  │                              │ (residual)
+  ▼                              │
+Causal Dilated Conv (d=1)        │
+  ↓                              │
+Causal Dilated Conv (d=2)        │
+  ↓                              │
+1×1 Conv (match channels) ───────┘
+  ↓
+Output
+```
+
+TCNs often match or outperform LSTMs on time-series benchmarks.
+
+---
+
+## ❌ Common Mistakes {#mistakes}
+
+**1. Using standard padding instead of causal in forecasting** ❌
+> The kernel peeks at future steps. The model gets artificially low training loss but fails at inference time.
+> Fix: always use `padding="causal"` for sequence forecasting.
+
+**2. Forgetting to crop targets after Conv1D with stride > 1** ❌
+> Conv1D output is shorter than the input. Comparing against the original-length targets causes a shape mismatch error.
+> Fix: `Y_train_cropped = Y_train[:, 3:]` (adjust index to match output).
+
+**3. Using BiLSTM for live / real-time forecasting** ❌
+> The backward pass needs future values that do not exist in a streaming system.
+> Fix: use unidirectional LSTM or causal Conv1D for real-time inference.
+
+**4. Shuffling batches with stateful LSTM** ❌
+> The hidden state carries information from batch $n$ to batch $n+1$. Shuffling breaks the ordering and corrupts the state.
+> Fix: set `shuffle=False` during training.
 
 ---
 
 ## 🎤 Interview Q&A {#interview}
 
-**Q1: What is "causal padding", and why is it mandatory for sequential forecasting architectures?**
-> **A:** Causal padding pads the input sequence with zeros only on the left side. This ensures that the convolutional kernel at time step $t$ only covers inputs from step $t$ and earlier ($t, t-1, t-2, \dots$). If we used standard `same` or `valid` padding, the kernel would look at future time steps ($t+1, t+2$) to compute the output at step $t$. This causes **data leakage** (future information leaking into the past), leading to a model that performs artificially well during training but fails completely during real-world inference where future values are unknown.
+**Q1: What is causal padding and why is it required for sequence forecasting?**
+> Causal padding adds zeros only on the left side. This ensures the output at step $t$ uses only inputs up to and including $t$. Without it, the kernel sees future inputs, causing data leakage — the model learns to "cheat" during training but fails in production.
 
-**Q2: How does WaveNet achieve a massive receptive field without using pooling layers?**
-> **A:** WaveNet uses **dilated convolutions**. In standard convolutions, expanding the receptive field requires either increasing the kernel size (which increases parameter count) or using pooling layers (which reduces sequence resolution). Dilated convolutions skip input steps at regular intervals ($d=1, 2, 4, 8 \dots$). By doubling the dilation rate at each layer, the receptive field grows exponentially with depth, allowing the network to cover thousands of steps at the top layer while retaining fine-grained step-by-step resolution.
+**Q2: How does WaveNet expand its receptive field efficiently?**
+> By doubling the dilation rate at each layer (1, 2, 4, 8 ...). For $L$ layers with kernel size 2, the receptive field is $R = 2^L$ steps. Parameters grow linearly with $L$, but the context window grows exponentially.
+
+**Q3: When would you pick TCN over LSTM?**
+> When training speed matters, when sequences are long, or when you need stable gradients. TCNs are fully parallel and do not suffer from vanishing gradients. LSTMs are preferred for online/streaming tasks where you need to update state one step at a time.
+
+**Q4: What is the difference between residual and skip connections in WaveNet?**
+> **Residual:** adds the input of a block to its output — helps gradient flow and keeps the model stable. **Skip:** sends each layer's output directly to the final output layer so every layer contributes to the prediction, not just the last one.
+
+**Q5: Why use a stateful LSTM instead of a stateless one?**
+> When the full sequence is too long to fit in one batch. Stateful LSTM carries the hidden state across ordered batches, so the model maintains memory of a continuous stream without truncation.
 
 ---
 
-## ⚡ One-Page Flash Card {#revision}
+## ⚡ Flash Card {#revision}
 
 ```
 ╔══════════════════════════════════════════════════════════════════╗
-║               MODULE 5 — 1D CNNs & WAVENET CARD                  ║
+║           MODULE 5 — 1D CNNs & WAVENET QUICK REFERENCE          ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║                                                                  ║
-║  1D CNN SPEED:                                                   ║
-║  - Computes features across sequence steps in parallel.          ║
-║  - Faster training on GPUs than sequential RNNs.                 ║
+║  1D CNN                                                          ║
+║  - y_t = sum(w_k * x_{t-k})                                     ║
+║  - Parallel computation — faster than RNN on GPU.               ║
 ║                                                                  ║
-║  CAUSAL PADDING:                                                 ║
-║  - Left-only padding: output y(t) only depends on x(<=t).        ║
-║  - Crucial to prevent future data leakage in forecasting.        ║
+║  CAUSAL PADDING                                                  ║
+║  - Zeros on LEFT only.  padding="causal" in Keras.              ║
+║  - y(t) depends only on x(<= t).  No future leakage.            ║
 ║                                                                  ║
-║  HYBRID NETWORKS:                                                ║
-║  - Conv1D(stride=2) downsamples sequence length by 50%.          ║
-║  - Cuts RNN unrolling steps, saving memory and training time.     ║
+║  HYBRID CNN-RNN                                                  ║
+║  - Conv1D(stride=2) cuts sequence length ~50%.                   ║
+║  - Shorter sequence → fewer RNN steps → faster training.         ║
+║  - Crop targets to match: Y[:, 3:]                               ║
 ║                                                                  ║
-║  WAVENET STRATEGY:                                               ║
-║  - Stacked Conv1D layers with doubling dilations: 1, 2, 4, 8...  ║
-║  - Receptive field grows exponentially: RF = 1 + sum(d)*(K-1).   ║
-║  - Gated activation: tanh(Wf*x) * sigmoid(Wg*x) stabilizes.      ║
+║  WAVENET DILATED CONV                                            ║
+║  - y_t = sum(w_tau * x_{t - d*tau})                             ║
+║  - Dilations 1,2,4,8 repeated → R = 1 + 2*(sum of dilations).  ║
+║  - Gate: tanh(Wf*x) * sigmoid(Wg*x).                            ║
+║                                                                  ║
+║  TCN vs LSTM                                                     ║
+║  - TCN: parallel, stable gradients, needs dilation.             ║
+║  - LSTM: sequential, gating, good for streaming.                 ║
+║                                                                  ║
+║  STATEFUL LSTM RULES                                             ║
+║  - shuffle=False, fixed batch_size, reset_states() each epoch.  ║
 ║                                                                  ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
 ---
 
----
-
-**🔗 Previous Module →** [04_Long_Term_Dependency_Cells_LSTM_and_GRU.md](04_Long_Term_Dependency_Cells_LSTM_and_GRU.md)  
+**🔗 Previous Module →** [04_Long_Term_Dependency_Cells_LSTM_and_GRU.md](04_Long_Term_Dependency_Cells_LSTM_and_GRU.md)
 **🔗 Chapter Complete! →** [Back to Chapter Index](../notes.md)

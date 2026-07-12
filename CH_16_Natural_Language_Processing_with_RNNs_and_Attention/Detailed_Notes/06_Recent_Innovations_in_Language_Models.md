@@ -225,6 +225,18 @@ model = keras.Model(inputs=gpt_base.input, outputs=sentiment_head)
 
 **GPT-3 (2020):** 175B parameters. Few-shot learning emerged as an ability — the model could perform tasks from just 3-5 examples shown in the prompt, no gradient updates needed.
 
+### 🤖 InstructGPT & ChatGPT: The RLHF Alignment Phase
+While GPT-3 was powerful, it was hard to control. It was trained to predict the next word on the internet, so a prompt like *"Write a Python script for binary search"* might result in a list of other coding exercises instead of the code itself!
+
+To make LLMs helpful, honest, and harmless, researchers introduced **Reinforcement Learning from Human Feedback (RLHF)** to align them.
+
+![RLHF Alignment Workflow](../Visuals/18_rlhf_workflow.png)
+> 📊 **Graph 18:** The 3-step RLHF alignment process that transforms a raw language model into a conversational assistant.
+
+1. **SFT (Supervised Fine-Tuning):** Human annotators write prompts and the ideal responses. The base model is fine-tuned on this high-quality dataset.
+2. **Reward Model (RM) Training:** The SFT model generates multiple outputs for a prompt. Humans rank these outputs from best to worst. A separate neural network (the Reward Model) is trained to look at a prompt-response pair and predict the human rating score.
+3. **PPO Reinforcement Learning:** The SFT model's policy is updated using Proximal Policy Optimization (PPO). It generates responses, the Reward Model scores them, and PPO updates the LLM's weights to maximize the predicted human score (with a KL-divergence penalty to ensure the model doesn't drift too far from the SFT base).
+
 ---
 
 ## 🔍 BERT — Bidirectional Encoder Representations from Transformers {#bert}

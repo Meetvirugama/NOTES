@@ -164,6 +164,18 @@ X_test  = keras.preprocessing.sequence.pad_sequences(X_test,  maxlen=200)
 print(X_train.shape)  # → (25000, 200)
 ```
 
+### ✂️ Modern Subword Tokenization (BPE & WordPiece)
+Standard tokenization splits text on whitespace and punctuation. This results in two major flaws:
+1. **Out-of-Vocabulary (OOV) words:** Any word not seen in the training data gets mapped to `<UNK>`, losing all semantic meaning.
+2. **Vocabulary Explosion:** Treating different inflections (e.g., `run`, `running`, `runner`) as entirely unique words blows up vocabulary size.
+
+Modern architectures (like BERT, GPT, and T5) use **Subword Tokenization** (e.g., Byte-Pair Encoding or WordPiece).
+- If a word is known, keep it as a whole.
+- If it is unknown, break it down into common subwords.
+
+![Subword Tokenization](../Visuals/17_subword_tokenization.png)
+> 📊 **Graph 17:** An out-of-vocabulary word `"unbelievably"` is broken down into constituent subwords `["un", "##believ", "##able", "##ly"]`, preserving semantic roots.
+
 ---
 
 ## 🎭 Masking: Ignoring Padding During RNN Processing {#masking}

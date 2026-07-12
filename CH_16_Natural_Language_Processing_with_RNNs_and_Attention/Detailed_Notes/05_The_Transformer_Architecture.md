@@ -194,6 +194,9 @@ The Transformer cannot distinguish these without position information!
 
 **The Solution:** Add a position-dependent signal to each word embedding BEFORE processing:
 
+![Positional Encoding Functions](../Visuals/16_positional_encoding.png)
+> 📊 **Graph 16:** Visual representation of sinusoidal positional encoding waves of different dimensions/frequencies.
+
 $$PE_{(pos, 2i)}   = \sin\left(\frac{pos}{10000^{2i/d_{model}}}\right)$$
 $$PE_{(pos, 2i+1)} = \cos\left(\frac{pos}{10000^{2i/d_{model}}}\right)$$
 
