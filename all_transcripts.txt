@@ -1,0 +1,46 @@
+
+
+--- VIDEO ID: JFF2vJaN0Cw ---
+[TRANSCRIPT UNAVAILABLE: type object 'YouTubeTranscriptApi' has no attribute 'get_transcript']
+
+--- VIDEO ID: 4D55Cmj2t-A ---
+[TRANSCRIPT UNAVAILABLE: type object 'YouTubeTranscriptApi' has no attribute 'get_transcript']
+
+--- VIDEO ID: n0iaPtsnmxQ ---
+[TRANSCRIPT UNAVAILABLE: type object 'YouTubeTranscriptApi' has no attribute 'get_transcript']
+
+--- VIDEO ID: GfaHdjApnhU ---
+[TRANSCRIPT UNAVAILABLE: type object 'YouTubeTranscriptApi' has no attribute 'get_transcript']
+
+--- VIDEO ID: lg-f92uY1Lc ---
+[TRANSCRIPT UNAVAILABLE: type object 'YouTubeTranscriptApi' has no attribute 'get_transcript']
+
+--- VIDEO ID: uDulBxDb7GM ---
+[TRANSCRIPT UNAVAILABLE: type object 'YouTubeTranscriptApi' has no attribute 'get_transcript']
+
+--- VIDEO ID: 7t0YJWTjmdI ---
+[TRANSCRIPT UNAVAILABLE: type object 'YouTubeTranscriptApi' has no attribute 'get_transcript']
+
+--- VIDEO ID: 3IaB2a8tXLA ---
+[TRANSCRIPT UNAVAILABLE: type object 'YouTubeTranscriptApi' has no attribute 'get_transcript']
+
+--- VIDEO ID: YxyLN3N5w9s ---
+[TRANSCRIPT UNAVAILABLE: type object 'YouTubeTranscriptApi' has no attribute 'get_transcript']
+
+--- VIDEO ID: wuI6FGsOFZU ---
+[TRANSCRIPT UNAVAILABLE: type object 'YouTubeTranscriptApi' has no attribute 'get_transcript']
+
+--- VIDEO ID: mf4bRP_puNQ ---
+[TRANSCRIPT UNAVAILABLE: type object 'YouTubeTranscriptApi' has no attribute 'get_transcript']
+
+--- VIDEO ID: 3N5a9cHYzCM ---
+[TRANSCRIPT UNAVAILABLE: type object 'YouTubeTranscriptApi' has no attribute 'get_transcript']
+
+--- VIDEO ID: dDP36_ZBs6A ---
+[TRANSCRIPT UNAVAILABLE: type object 'YouTubeTranscriptApi' has no attribute 'get_transcript']
+
+--- VIDEO ID: vdtqEPKYB5M ---
+[TRANSCRIPT UNAVAILABLE: type object 'YouTubeTranscriptApi' has no attribute 'get_transcript']
+
+--- VIDEO ID: JhBnOamc_8s ---
+[TRANSCRIPT UNAVAILABLE: type object 'YouTubeTranscriptApi' has no attribute 'get_transcript']
