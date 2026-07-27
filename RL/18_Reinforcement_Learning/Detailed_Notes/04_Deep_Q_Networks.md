@@ -46,21 +46,19 @@ Imagine learning to play 49 different video games. With tabular Q-Learning, you'
 
 ### The Solution: Neural Network Q-Function Approximation
 
-Instead of a table Q[s,a], use a neural network Q_θ(s,a) parameterized by θ:
+Instead of a table $Q[s,a]$, use a neural network $Q_\theta(s,a)$ parameterized by $\theta$:
 
-```
-DEEP Q-NETWORK ARCHITECTURE:
-
-Input: s (state observation — e.g., 4 floats for CartPole)
-          ↓
-    Dense(32, relu)
-          ↓
-    Dense(32, relu)
-          ↓
-    Dense(n_actions, linear)  ← One output per action, NO activation
-          ↓
-Output: [Q(s,a_0), Q(s,a_1), ..., Q(s,a_{n-1})]  (all Q-values simultaneously)
-```
+> **DEEP Q-NETWORK ARCHITECTURE:**
+> 
+> **Input:** $s$ (state observation — e.g., 4 floats for CartPole)  
+> &nbsp;&nbsp;&nbsp;&nbsp;$\downarrow$  
+> **Dense(32, relu)**  
+> &nbsp;&nbsp;&nbsp;&nbsp;$\downarrow$  
+> **Dense(32, relu)**  
+> &nbsp;&nbsp;&nbsp;&nbsp;$\downarrow$  
+> **Dense($n_{\text{actions}}$, linear)** $\leftarrow$ One output per action, NO activation  
+> &nbsp;&nbsp;&nbsp;&nbsp;$\downarrow$  
+> **Output:** $[Q(s,a_0), Q(s,a_1), \dots, Q(s,a_{n-1})]$ (all Q-values simultaneously)
 
 **Key design**: Output all Q(s, a_i) simultaneously for a given state s. This is more efficient than a separate forward pass per action.
 
@@ -70,15 +68,15 @@ Output: [Q(s,a_0), Q(s,a_1), ..., Q(s,a_{n-1})]  (all Q-values simultaneously)
 
 We minimize the Mean Squared TD Error:
 
-```
-L(θ) = E[(r + γ·max_{a'} Q_{θ-}(s',a') - Q_θ(s,a))²]
-         ↑ target (from θ-: frozen target network)   ↑ prediction
-```
+$$
+L(\theta) = \mathbb{E}\left[ \left(r + \gamma \max_{a'} Q_{\theta^-}(s',a') - Q_\theta(s,a)\right)^2 \right]
+$$
+> **Note:** The target uses the frozen network $\theta^-$, while the prediction uses the online network $\theta$.
 
 This looks like supervised regression where:
-- Input: state s
-- Target: r + γ·max_a' Q_{θ-}(s',a')
-- Prediction: Q_θ(s,a) for the taken action
+- Input: state $s$
+- Target: $r + \gamma \max_{a'} Q_{\theta^-}(s',a')$
+- Prediction: $Q_\theta(s,a)$ for the taken action
 
 ---
 
@@ -87,9 +85,9 @@ This looks like supervised regression where:
 ### Problem 1: Temporal Correlation
 
 In standard online learning, the agent collects experience sequentially:
-```
-(s_0, a_0, r_0, s_1), (s_1, a_1, r_1, s_2), (s_2, a_2, r_2, s_3), ...
-```
+$$
+(s_0, a_0, r_0, s_1) \longrightarrow (s_1, a_1, r_1, s_2) \longrightarrow (s_2, a_2, r_2, s_3) \longrightarrow \dots
+$$
 
 These are **highly correlated**: consecutive states differ by only one action. Training a neural network on this sequence is like training on a dataset sorted by time — the network overfits to the recent trajectory and forgets older patterns.
 
@@ -98,11 +96,12 @@ These are **highly correlated**: consecutive states differ by only one action. T
 ### Problem 2: Non-Stationary Targets
 
 The DQN loss uses:
-```
-Target = r + γ·max_{a'} Q_θ(s',a')
-```
 
-But Q_θ changes with every gradient step! This means the **training target moves every step** — like trying to hit a moving bullseye. The network chases a non-stationary target, often leading to oscillation or divergence.
+$$
+\text{Target} = r + \gamma \max_{a'} Q_\theta(s',a')
+$$
+
+But $Q_\theta$ changes with every gradient step! This means the **training target moves every step** — like trying to hit a moving bullseye. The network chases a non-stationary target, often leading to oscillation or divergence.
 
 **Analogy**: Imagine you're learning to estimate weights. Every time you weigh yourself, the scale recalibrates. You can never converge on a stable estimate.
 
@@ -112,17 +111,15 @@ But Q_θ changes with every gradient step! This means the **training target move
 
 ### Solution to Problem 1: Random Sampling from a Memory Buffer
 
-```
-EXPERIENCE REPLAY:
-
-1. Store every transition in a replay buffer:
-   buffer.add( (s_t, a_t, r_t, s_{t+1}, done_t) )
-
-2. At training time, sample a RANDOM MINI-BATCH from the buffer:
-   batch = random.sample(buffer, batch_size=32)
-
-3. Compute loss on the random batch and update θ.
-```
+> **EXPERIENCE REPLAY:**
+> 
+> 1. Store every transition in a replay buffer:
+>    $\text{buffer.add}( (s_t, a_t, r_t, s_{t+1}, \text{done}_t) )$
+> 
+> 2. At training time, sample a RANDOM MINI-BATCH from the buffer:
+>    $\text{batch} = \text{random.sample}(\text{buffer}, \text{batch\_size}=32)$
+> 
+> 3. Compute loss on the random batch and update $\theta$.
 
 ![Experience Replay Buffer](../Visuals/10_experience_replay_buffer.png)
 
@@ -178,20 +175,18 @@ print(f"Buffer capacity: {replay_buffer.buffer.maxlen:,} transitions")
 
 ### Solution to Problem 2: Freezing the Target Q-Network
 
-```
-ONLINE NETWORK θ:    Updated every gradient step (learns fast)
-TARGET NETWORK θ-:   Frozen copy of θ; updated every C steps (stable target)
-```
+> **ONLINE NETWORK** $\theta$: Updated every gradient step (learns fast)  
+> **TARGET NETWORK** $\theta^-$: Frozen copy of $\theta$; updated every $C$ steps (stable target)
 
 The loss becomes:
-```
-L(θ) = E[(r + γ·max_{a'} Q_{θ-}(s',a') - Q_θ(s,a))²]
-              ↑ uses FROZEN target network
-```
+$$
+L(\theta) = \mathbb{E}\left[ \left(r + \gamma \max_{a'} Q_{\theta^-}(s',a') - Q_\theta(s,a)\right)^2 \right]
+$$
+> **Note:** The target uses the FROZEN target network.
 
 ![Target Network Mechanism](../Visuals/11_target_network_mechanism.png)
 
-Since θ- is frozen for C steps (e.g., C=1,000), the target `r + γ·max Q_{θ-}` is **stationary** during those steps — the network has a stable goal to chase.
+Since $\theta^-$ is frozen for $C$ steps (e.g., $C=1,000$), the target $r + \gamma \max_{a'} Q_{\theta^-}$ is **stationary** during those steps — the network has a stable goal to chase.
 
 ### Two Ways to Update the Target Network
 
@@ -219,47 +214,45 @@ for target_var, online_var in zip(target_network.trainable_variables,
 
 ## 🔍 5. The Full DQN Algorithm {#dqn-algorithm}
 
-```
-DQN ALGORITHM (Mnih et al., 2015):
+**DQN ALGORITHM (Mnih et al., 2015):**
 ──────────────────────────────────────────────────────────────────
-Initialize:
-  Q_θ (online network) with random weights θ
-  Q_{θ-} (target network) as copy of Q_θ: θ- ← θ
-  Replay buffer B with capacity N_buffer
+**Initialize:**
+- $Q_\theta$ (online network) with random weights $\theta$
+- $Q_{\theta^-}$ (target network) as copy of $Q_\theta$: $\theta^- \leftarrow \theta$
+- Replay buffer $B$ with capacity $N_{\text{buffer}}$
   
-Hyperparameters:
-  ε_start=1.0, ε_end=0.01, ε_decay_steps=500,000
-  γ=0.99, α=1e-4, batch_size=32
-  C=1,000 (target update frequency), N_min=1,000 (warmup)
+**Hyperparameters:**
+- $\epsilon_{\text{start}}=1.0$, $\epsilon_{\text{end}}=0.01$, $\epsilon_{\text{decay\_steps}}=500,000$
+- $\gamma=0.99$, $\alpha=10^{-4}$, $\text{batch\_size}=32$
+- $C=1,000$ (target update frequency), $N_{\text{min}}=1,000$ (warmup)
 
-For t = 1, 2, 3, ...:
-  1. SELECT ACTION (ε-greedy):
-     With prob ε: a_t = random_action()
-     Otherwise:   a_t = argmax_a Q_θ(s_t, a)
+**For** $t = 1, 2, 3, \dots$:
+  1. **SELECT ACTION ($\epsilon$-greedy):**
+     - With prob $\epsilon$: $a_t = \text{random\_action}()$
+     - Otherwise: $a_t = \arg\max_a Q_\theta(s_t, a)$
   
-  2. EXECUTE ACTION:
-     Observe (r_t, s_{t+1}, done)
+  2. **EXECUTE ACTION:**
+     - Observe $(r_t, s_{t+1}, \text{done})$
      
-  3. STORE TRANSITION:
-     B.add(s_t, a_t, r_t, s_{t+1}, done)
+  3. **STORE TRANSITION:**
+     - $B.\text{add}(s_t, a_t, r_t, s_{t+1}, \text{done})$
   
-  4. TRAIN (if |B| > N_min):
-     Sample mini-batch {(s_i, a_i, r_i, s'_i, done_i)} ~ B
+  4. **TRAIN (if $|B| > N_{\text{min}}$):**
+     - Sample mini-batch $\{(s_i, a_i, r_i, s'_i, \text{done}_i)\} \sim B$
      
-     For each i:
-       if done_i:  y_i = r_i                                  (terminal)
-       else:       y_i = r_i + γ · max_{a'} Q_{θ-}(s'_i, a') (non-terminal)
+      - For each $i$:
+       - If $\text{done}_i$: $y_i = r_i$ (terminal)
+       - Else: $y_i = r_i + \gamma \max_{a'} Q_{\theta^-}(s'_i, a')$ (non-terminal)
      
-     Loss: L = (1/batch_size) · Σ (y_i - Q_θ(s_i, a_i))²
-     Update: θ ← θ - α · ∇_θ L
+     - **Loss:** $L = \frac{1}{\text{batch\_size}} \sum_i (y_i - Q_\theta(s_i, a_i))^2$
+     - **Update:** $\theta \leftarrow \theta - \alpha \nabla_\theta L$
   
-  5. UPDATE TARGET (every C steps):
-     θ- ← θ
+  5. **UPDATE TARGET (every $C$ steps):**
+     - $\theta^- \leftarrow \theta$
   
-  6. DECAY EPSILON:
-     ε = max(ε_end, ε_start - t/ε_decay_steps)
+  6. **DECAY EPSILON:**
+     - $\epsilon = \max(\epsilon_{\text{end}}, \epsilon_{\text{start}} - t/\epsilon_{\text{decay\_steps}})$
 ──────────────────────────────────────────────────────────────────
-```
 
 ---
 
@@ -470,9 +463,10 @@ class FrameStack:
 
 ### The Overestimation Problem in Vanilla DQN
 
-DQN's target: `y = r + γ · max_{a'} Q_{θ-}(s', a')`
+DQN's target: 
+$$ y = r + \gamma \max_{a'} Q_{\theta^-}(s', a') $$
 
-The `max` operation tends to **overestimate Q-values** due to noise in Q-function estimates. If Q(s', a_1) = 10.1 and Q(s', a_2) = 9.9 due to noise (true Q-values are both 10.0), we always pick max = 10.1, consistently overestimating.
+The $\max$ operation tends to **overestimate Q-values** due to noise in Q-function estimates. If $Q(s', a_1) = 10.1$ and $Q(s', a_2) = 9.9$ due to noise (true Q-values are both $10.0$), we always pick $\max = 10.1$, consistently overestimating.
 
 Over time, overestimated Q-values propagate and compound through Bellman backups → instability and suboptimal policies.
 
@@ -480,19 +474,21 @@ Over time, overestimated Q-values propagate and compound through Bellman backups
 
 **Decouple action selection from action evaluation**:
 
-```
-VANILLA DQN:
-  y = r + γ · max_{a'} Q_{θ-}(s', a')
-  Both SELECT and EVALUATE using the same target network θ-
+**VANILLA DQN:**  
+$$ y = r + \gamma \max_{a'} Q_{\theta^-}(s', a') $$
+> *Both SELECT and EVALUATE using the same target network* $\theta^-$
 
-DOUBLE DQN:
-  a*  = argmax_{a'} Q_θ(s', a')           <- SELECT action using ONLINE network θ
-  y   = r + γ · Q_{θ-}(s', a*)            <- EVALUATE that action using TARGET network θ-
-```
+**DOUBLE DQN:**  
+$$
+\begin{aligned}
+a^* &= \arg\max_{a'} Q_\theta(s', a') && \leftarrow \text{SELECT action using ONLINE network } \theta \\
+y &= r + \gamma Q_{\theta^-}(s', a^*) && \leftarrow \text{EVALUATE that action using TARGET network } \theta^-
+\end{aligned}
+$$
 
 ![Double DQN Overestimation](../Visuals/12_double_dqn_overestimation.png)
 
-**Why it helps**: If the online network Q_θ overestimates action a*, the target network Q_{θ-} provides an independent (hopefully lower) estimate of Q(s', a*), averaging out the overestimation.
+**Why it helps**: If the online network $Q_\theta$ overestimates action $a^*$, the target network $Q_{\theta^-}$ provides an independent (hopefully lower) estimate of $Q(s', a^*)$, averaging out the overestimation.
 
 ### Implementation Change (Minimal!)
 
@@ -536,30 +532,27 @@ For many states, the exact Q-value for each action doesn't matter — what matte
 
 ### Dueling Architecture (Wang et al., 2016)
 
-```
-DUELING DQN ARCHITECTURE:
-
-Input: s (state)
-          ↓
-    Shared Feature Extractor (CNN or MLP)
-          ↓
-    ┌─────────────────────┐
-    │                     │
-  Value       Advantage
-  Stream       Stream
-  V(s) = 1    A(s,a) = n_actions
-    │                     │
-    └──────── Combine ────┘
-              Q(s,a) = V(s) + A(s,a) - mean(A)
-```
+> **DUELING DQN ARCHITECTURE:**
+> 
+> **Input:** $s$ (state)  
+> &nbsp;&nbsp;&nbsp;&nbsp;$\downarrow$  
+> **Shared Feature Extractor** (CNN or MLP)  
+> &nbsp;&nbsp;&nbsp;&nbsp;$\downarrow$  
+> ┌─────────────────────┐  
+> │&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│  
+> **Value Stream** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; **Advantage Stream**  
+> $V(s) \in \mathbb{R}$ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; $A(s,a) \in \mathbb{R}^{|\mathcal{A}|}$  
+> │&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│  
+> └──────── Combine ────┘  
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$Q(s,a) = V(s) + A(s,a) - \text{mean}(A)$
 
 **The Aggregation Layer (Critical!):**
 
 ![Dueling DQN Architecture](../Visuals/13_dueling_dqn_architecture.png)
 
-```
-Q(s,a) = V(s) + (A(s,a) - (1/|A|)·Σ_{a'} A(s,a'))
-```
+$$
+Q(s,a) = V(s) + \left( A(s,a) - \frac{1}{|\mathcal{A}|} \sum_{a'} A(s,a') \right)
+$$
 
 Subtracting the mean of advantages ensures identifiability — otherwise V and A are interchangeable and the network can't learn them separately (e.g., V=10 and A=[0,0,0] gives same Q as V=0 and A=[10,10,10]).
 
@@ -616,35 +609,41 @@ print(f"Q-values shape: {q.shape}")   # OUTPUT: Q-values shape: (1, 2)
 ### Motivation
 
 Standard experience replay samples transitions **uniformly at random**. But not all transitions are equally informative:
-- A transition with high TD error |δ| = |r + γ·max Q(s',a') - Q(s,a)| → the network was very wrong → highly informative.
-- A transition with low TD error → the network already handles this well → less informative to sample.
+- A transition with high TD error $|\delta| = |r + \gamma \max_{a'} Q(s',a') - Q(s,a)| \rightarrow$ the network was very wrong $\rightarrow$ highly informative.
+- A transition with low TD error $\rightarrow$ the network already handles this well $\rightarrow$ less informative to sample.
 
 ### Priority-Based Sampling
 
-```
-Priority of transition i:
-  p_i = |δ_i| + ε    (ε = small constant for numerical stability, e.g., 1e-6)
+**Priority of transition $i$:**
+$$
+p_i = |\delta_i| + \epsilon \quad (\epsilon \text{ = small constant for numerical stability, e.g., } 10^{-6})
+$$
 
-Sampling probability:
-  P(i) = p_i^α / Σ_j p_j^α
-  
-  α=0: Uniform sampling (standard replay)
-  α=1: Pure priority sampling
+**Sampling probability:**
+$$
+P(i) = \frac{p_i^\alpha}{\sum_j p_j^\alpha}
+$$
+- $\alpha=0$: Uniform sampling (standard replay)
+- $\alpha=1$: Pure priority sampling
 
-Importance Sampling correction (to unbias gradients):
-  w_i = (1 / (N · P(i)))^β    (β increases from β_0=0.4 to 1 during training)
-  Loss: L = Σ_i w_i · (y_i - Q(s_i, a_i))²
-```
+**Importance Sampling correction (to unbias gradients):**
+$$
+w_i = \left( \frac{1}{N \cdot P(i)} \right)^\beta \quad (\beta \text{ increases from } \beta_0=0.4 \text{ to } 1 \text{ during training})
+$$
+**Loss:**
+$$
+L = \sum_i w_i \left( y_i - Q(s_i, a_i) \right)^2
+$$
 
 > [!WARNING]
-> Prioritized Experience Replay improves **sample efficiency** but is significantly more complex to implement correctly. The IS weights (w_i) are essential — without them, PER biases the gradient toward frequently-sampled transitions, causing systematic underestimation of Q-values for common, easy transitions.
+> Prioritized Experience Replay improves **sample efficiency** but is significantly more complex to implement correctly. The IS weights ($w_i$) are essential — without them, PER biases the gradient toward frequently-sampled transitions, causing systematic underestimation of Q-values for common, easy transitions.
 
 ---
 
 ## ❌ Common Beginner Mistakes {#mistakes}
 
 **1. "Not using a target network"** ❌
-> Without the target network, the TD target `r + γ·max Q_θ(s',a')` changes every gradient step (non-stationary). Training diverges catastrophically within hundreds of steps. Always maintain a separate frozen target network, updated every C steps.
+> Without the target network, the TD target $r + \gamma \max_{a'} Q_\theta(s',a')$ changes every gradient step (non-stationary). Training diverges catastrophically within hundreds of steps. Always maintain a separate frozen target network, updated every $C$ steps.
 
 **2. "Training before the replay buffer has enough samples"** ❌
 > Starting gradient updates immediately (batch_size << replay_buffer size) means sampling the same transitions repeatedly — no diversity benefit from the buffer. Wait until buffer has at least 1K-10K transitions (WARMUP_STEPS) before training.
@@ -656,8 +655,7 @@ Importance Sampling correction (to unbias gradients):
 > Updating the target every 10 steps (C=10) means the target is almost always changing — defeating the purpose. The book uses C=1,000-10,000. Too small = non-stationary. Too large = target too stale. Tune C based on the environment (1,000 for CartPole, 10,000 for Atari).
 
 **5. "Forgetting to handle terminal states in TD target"** ❌
-> For terminal transitions (done=True), the next state s' doesn't exist — there's no future return. The target must be: `y = r` (not `r + γ·max Q(s',a')`). Forgetting this makes Q-values for states near episode end artificially inflated by the value of a non-existent future.
-
+> For terminal transitions (done=True), the next state s' doesn't exist — there's no future return. The target must be: $y = r$ (not $r + \gamma \max_{a'} Q(s',a')$). Forgetting this makes Q-values for states near episode end artificially inflated by the value of a non-existent future.
 ---
 
 ## 🎤 Interview Q&A {#interview}
@@ -665,78 +663,80 @@ Importance Sampling correction (to unbias gradients):
 **Q1: What are the two main innovations in DQN that made deep Q-learning stable, and why are they necessary?**
 > **A:**
 > **1. Experience Replay Buffer**:
-> Without it, consecutive training samples are temporally correlated — (s_t, ...) and (s_{t+1}, ...) share almost identical features. Neural networks trained on correlated sequences exhibit catastrophic forgetting: optimizing for the current state corrupts what was learned for previous states. The buffer stores 50K+ diverse transitions and provides random mini-batches that break temporal correlations, approximating IID data as in supervised learning.
+> Without it, consecutive training samples are temporally correlated — $(s_t, \dots)$ and $(s_{t+1}, \dots)$ share almost identical features. Neural networks trained on correlated sequences exhibit catastrophic forgetting: optimizing for the current state corrupts what was learned for previous states. The buffer stores 50K+ diverse transitions and provides random mini-batches that break temporal correlations, approximating IID data as in supervised learning.
 >
 > **2. Target Network**:
-> Without it, the TD target `r + γ·max_{a'} Q_θ(s',a')` uses the same rapidly-changing weights θ that are being updated. This creates a non-stationary moving target — the network oscillates or diverges chasing its own shadow. The target network θ- is a frozen snapshot, providing a stable target for C=1,000-10,000 steps, then hard-copied from θ.
+> Without it, the TD target $r + \gamma \max_{a'} Q_\theta(s',a')$ uses the same rapidly-changing weights $\theta$ that are being updated. This creates a non-stationary moving target — the network oscillates or diverges chasing its own shadow. The target network $\theta^-$ is a frozen snapshot, providing a stable target for $C=1,000-10,000$ steps, then hard-copied from $\theta$.
 >
 > Both innovations are required together. Replay without target network still has non-stationary targets; target network without replay still has correlated samples. The combination creates effective DQN.
 
 **Q2: Explain the overestimation problem in DQN and how Double DQN solves it.**
-> **A:** DQN's target uses `max_{a'} Q_{θ-}(s',a')`. Due to noise in the Q-function approximation, max operation **consistently picks the noisy upward outlier** among action Q-values. If true Q=10 for all actions but noise makes one action appear as Q=10.5, we always overestimate by 0.5. This overestimation compounds through Bellman backups.
+> **A:** DQN's target uses $\max_{a'} Q_{\theta^-}(s',a')$. Due to noise in the Q-function approximation, max operation **consistently picks the noisy upward outlier** among action Q-values. If true $Q=10$ for all actions but noise makes one action appear as $Q=10.5$, we always overestimate by 0.5. This overestimation compounds through Bellman backups.
 >
 > Double DQN separates:
-> - **Selection**: `a* = argmax_{a'} Q_θ(s',a')` — use online network to pick which action is best
-> - **Evaluation**: `y = r + γ · Q_{θ-}(s', a*)` — use target network to estimate its value
+> - **Selection**: $a^* = \arg\max_{a'} Q_\theta(s',a')$ — use online network to pick which action is best
+> - **Evaluation**: $y = r + \gamma Q_{\theta^-}(s', a^*)$ — use target network to estimate its value
 >
 > Since online and target networks have independent noise, the online network may overestimate a*, but the target network provides an independent, lower-variance evaluation. This cross-checking substantially reduces the systematic upward bias in Q-value estimates.
 
 **Q3: What is the Dueling DQN architecture and in what situations is it most beneficial?**
-> **A:** Dueling DQN factorizes `Q(s,a) = V(s) + A(s,a) - mean_a(A(s,a))` into a state value V(s) and action advantage A(s,a), learned by separate network heads sharing a common feature extractor.
+> **A:** Dueling DQN factorizes $Q(s,a) = V(s) + A(s,a) - \text{mean}_a(A(s,a))$ into a state value $V(s)$ and action advantage $A(s,a)$, learned by separate network heads sharing a common feature extractor.
 >
 > **Most beneficial when**:
-> 1. Many actions have similar Q-values (A(s,a) ≈ 0 for most actions) — the network can learn V(s) efficiently without being confused by near-identical action values
-> 2. Some states are uniformly good/bad regardless of action (e.g., "falling to the ground" in many games) — V(s) captures this without needing different A(s,a) for each action
+> 1. Many actions have similar Q-values ($A(s,a) \approx 0$ for most actions) — the network can learn $V(s)$ efficiently without being confused by near-identical action values
+> 2. Some states are uniformly good/bad regardless of action (e.g., "falling to the ground" in many games) — $V(s)$ captures this without needing different $A(s,a)$ for each action
 >
 > **Less beneficial when**: Action selection is highly varied and every action has meaningfully different Q-values (rare in practice).
 >
 > Practically: Dueling consistently outperforms vanilla DQN on Atari with zero computational overhead — use it as default.
 
 **Q4: Why is it problematic to use the same network for both behavior (action selection) and learning targets?**
-> **A:** This is the core of the non-stationarity problem. Q-Learning's target: `y_i = r_i + γ·max_{a'} Q_θ(s'_i, a')`. When we take gradient step on loss `(y_i - Q_θ(s_i, a_i))²`, we update θ. But θ appears in *both* the prediction Q_θ(s_i, a_i) *and* the target y_i. So updating θ to bring Q_θ(s,a) closer to y simultaneously changes y — we moved the target.
+> **A:** This is the core of the non-stationarity problem. Q-Learning's target: $y_i = r_i + \gamma \max_{a'} Q_\theta(s'_i, a')$. When we take gradient step on loss $(y_i - Q_\theta(s_i, a_i))^2$, we update $\theta$. But $\theta$ appears in *both* the prediction $Q_\theta(s_i, a_i)$ *and* the target $y_i$. So updating $\theta$ to bring $Q_\theta(s,a)$ closer to $y$ simultaneously changes $y$ — we moved the target.
 >
 > It's analogous to a dog chasing its own tail: every step toward the goal moves the goal. This circular dependency creates oscillations and can diverge.
 >
-> The target network fixes this by using a separate frozen copy θ- for computing targets. θ- is only updated every C steps (not every gradient step), providing a stable fixed target y_i for those C steps — breaking the circular dependency.
+> The target network fixes this by using a separate frozen copy $\theta^-$ for computing targets. $\theta^-$ is only updated every $C$ steps (not every gradient step), providing a stable fixed target $y_i$ for those $C$ steps — breaking the circular dependency.
 
 ---
 
 ## ⚡ One-Page Flash Card {#revision}
 
-```
-╔══════════════════════════════════════════════════════════════════╗
-║               MODULE 04 — DEEP Q-NETWORKS (DQN)                  ║
-╠══════════════════════════════════════════════════════════════════╣
-║                                                                  ║
-║  DQN = Q-Learning + Neural Net + 2 Key Tricks:                  ║
-║  1. Experience Replay: random mini-batch from buffer             ║
-║     -> breaks temporal correlation                               ║
-║  2. Target Network θ-: frozen copy, update every C steps        ║
-║     -> stabilizes non-stationary TD targets                      ║
-║                                                                  ║
-║  DQN LOSS:                                                       ║
-║  L = (r + γ·max_{a'} Q_{θ-}(s',a') - Q_θ(s,a))²               ║
-║       ^--- target (frozen θ-)       ^--- prediction (live θ)    ║
-║                                                                  ║
-║  DOUBLE DQN:                                                     ║
-║  a* = argmax_{a'} Q_θ(s',a')   <- online network selects        ║
-║  y  = r + γ·Q_{θ-}(s',a*)     <- target network evaluates      ║
-║  -> Fixes Q-value overestimation (zero added cost!)              ║
-║                                                                  ║
-║  DUELING DQN:                                                    ║
-║  Q(s,a) = V(s) + A(s,a) - mean(A(s,:))                          ║
-║  -> Better for states where action choice doesn't matter much    ║
-║                                                                  ║
-║  KEY HYPERPARAMETERS (CartPole):                                 ║
-║  gamma=0.99, lr=1e-3, batch=64, buffer=10K, C=500, eps:1->0.02  ║
-║                                                                  ║
-║  COMMON PITFALLS:                                                ║
-║  No target network -> divergence                                 ║
-║  Activation on output layer -> wrong Q-value range              ║
-║  Train before warmup -> correlated batch = no replay benefit     ║
-║  done=True -> target must be r only, NOT r + γ·V(s')            ║
-╚══════════════════════════════════════════════════════════════════╝
-```
+> [!NOTE]
+> **MODULE 04 — DEEP Q-NETWORKS (DQN) REVISION CARD**
+> 
+> **DQN = Q-Learning + Neural Net + 2 Key Tricks:**
+> 1. **Experience Replay**: random mini-batch from buffer $\rightarrow$ breaks temporal correlation
+> 2. **Target Network $\theta^-$**: frozen copy, update every $C$ steps $\rightarrow$ stabilizes non-stationary TD targets
+> 
+> **DQN LOSS:**
+> $$
+> L(\theta) = \mathbb{E}\left[ \left(r + \gamma \max_{a'} Q_{\theta^-}(s',a') - Q_\theta(s,a)\right)^2 \right]
+> $$
+> 
+> **DOUBLE DQN:**
+> $$
+> \begin{aligned}
+> a^* &= \arg\max_{a'} Q_\theta(s',a') \\
+> y &= r + \gamma Q_{\theta^-}(s',a^*)
+> \end{aligned}
+> $$
+> $\rightarrow$ Fixes Q-value overestimation (zero added cost!)
+> 
+> **DUELING DQN:**
+> $$
+> Q(s,a) = V(s) + A(s,a) - \frac{1}{|\mathcal{A}|}\sum_{a'} A(s,a')
+> $$
+> $\rightarrow$ Better for states where action choice doesn't matter much
+> 
+> **KEY HYPERPARAMETERS (CartPole):**
+> - $\gamma = 0.99$, $\text{lr} = 10^{-3}$, $\text{batch} = 64$
+> - $\text{buffer} = 10\text{K}$, $C = 500$, $\epsilon: 1 \rightarrow 0.02$
+> 
+> **COMMON PITFALLS:**
+> 1. No target network $\rightarrow$ divergence
+> 2. Activation on output layer $\rightarrow$ wrong Q-value range
+> 3. Train before warmup $\rightarrow$ correlated batch = no replay benefit
+> 4. `done=True` $\rightarrow$ target must be $r$ only, NOT $r + \gamma V(s')$
 
 ---
 

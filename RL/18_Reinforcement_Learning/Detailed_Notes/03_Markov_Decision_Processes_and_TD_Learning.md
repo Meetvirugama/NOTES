@@ -73,27 +73,27 @@ Real-world systems are almost always stochastic (wind affects drone flight, mark
 ![Bellman Equation Flow](../Visuals/04_bellman_equation_flow.png)
 
 **Optimal State Value:**
-```
-V*(s) = max_a Σ_{s'} P(s'|s,a) [ R(s,a,s') + γ·V*(s') ]
-```
+$$
+V^*(s) = \max_a \sum_{s'} P(s'|s,a) \left[ R(s,a,s') + \gamma V^*(s') \right]
+$$
 
 **Optimal Action Value:**
-```
-Q*(s,a) = Σ_{s'} P(s'|s,a) [ R(s,a,s') + γ·max_{a'} Q*(s',a') ]
-```
+$$
+Q^*(s,a) = \sum_{s'} P(s'|s,a) \left[ R(s,a,s') + \gamma \max_{a'} Q^*(s',a') \right]
+$$
 
 **Deriving Optimal Policy from Q*:**
-```
-π*(s) = argmax_a Q*(s,a)
-```
+$$
+\pi^*(s) = \arg\max_a Q^*(s,a)
+$$
 
 ### Key Properties of Optimal Value Functions
 
 | Property | Description |
 |---------|-------------|
-| **Uniqueness** | V* and Q* are unique solutions to the Bellman optimality equations |
-| **Consistency** | V*(s) = max_a Q*(s,a) |
-| **Contraction** | Bellman backup operator T is a contraction (γ < 1 ensures convergence) |
+| **Uniqueness** | $V^*$ and $Q^*$ are unique solutions to the Bellman optimality equations |
+| **Consistency** | $V^*(s) = \max_a Q^*(s,a)$ |
+| **Contraction** | Bellman backup operator $T$ is a contraction ($\gamma < 1$ ensures convergence) |
 
 ---
 
@@ -221,22 +221,24 @@ TD learning is the **cornerstone of modern RL**: it combines the **sampling effi
 
 The **TD error** measures the difference between the current value estimate and a bootstrapped target:
 
-```
-δ_t = r_t + γ·V(s_{t+1}) - V(s_t)
-```
+$$
+\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)
+$$
 
 | Component | Meaning |
 |-----------|---------|
-| `r_t + γ·V(s_{t+1})` | **TD Target**: immediate reward + discounted value of next state |
-| `V(s_t)` | Current estimate of state value |
-| `δ_t` | Error signal: how wrong was our estimate? |
+| $r_t + \gamma V(s_{t+1})$ | **TD Target**: immediate reward + discounted value of next state |
+| $V(s_t)$ | Current estimate of state value |
+| $\delta_t$ | Error signal: how wrong was our estimate? |
 
 ### TD(0) Value Update Rule
 
-```
-V(s_t) ← V(s_t) + α · δ_t
-V(s_t) ← V(s_t) + α · [r_t + γ·V(s_{t+1}) - V(s_t)]
-```
+$$
+V(s_t) \leftarrow V(s_t) + \alpha \delta_t
+$$
+$$
+V(s_t) \leftarrow V(s_t) + \alpha [r_t + \gamma V(s_{t+1}) - V(s_t)]
+$$
 
 where α is the learning rate (step size).
 
@@ -280,12 +282,18 @@ TD(λ) unifies TD(0) and Monte Carlo via **eligibility traces**:
 ```
 
 **n-Step Returns:**
-```
-G_t^(1) = r_t + γ·V(s_{t+1})                                    (1-step TD)
-G_t^(2) = r_t + γ·r_{t+1} + γ²·V(s_{t+2})                      (2-step TD)
-G_t^(n) = r_t + γ·r_{t+1} + ... + γ^{n-1}·r_{t+n} + γ^n·V(s_{t+n})  (n-step TD)
-G_t^(λ) = (1-λ)Σ_{n=1}^{∞} λ^{n-1} · G_t^(n)                  (TD-λ: weighted average)
-```
+$$
+G_t^{(1)} = r_t + \gamma V(s_{t+1}) \quad \text{(1-step TD)}
+$$
+$$
+G_t^{(2)} = r_t + \gamma r_{t+1} + \gamma^2 V(s_{t+2}) \quad \text{(2-step TD)}
+$$
+$$
+G_t^{(n)} = r_t + \gamma r_{t+1} + \dots + \gamma^{n-1} r_{t+n} + \gamma^n V(s_{t+n}) \quad \text{(n-step TD)}
+$$
+$$
+G_t^{(\lambda)} = (1-\lambda) \sum_{n=1}^{\infty} \lambda^{n-1} G_t^{(n)} \quad \text{(TD-}\lambda\text{: weighted average)}
+$$
 
 ---
 
@@ -297,9 +305,9 @@ SARSA extends TD(0) to **learn Q(s,a)** (not just V(s)) while following the curr
 
 ### SARSA Update Rule
 
-```
-Q(s_t, a_t) ← Q(s_t, a_t) + α · [r_t + γ·Q(s_{t+1}, a_{t+1}) - Q(s_t, a_t)]
-```
+$$
+Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[ r_t + \gamma Q(s_{t+1}, a_{t+1}) - Q(s_t, a_t) \right]
+$$
 
 > [!NOTE]
 > The key property: SARSA uses `a_{t+1}` — the **actual next action sampled from the current policy** (hence "on-policy"). It evaluates the policy it's following. If the policy is ε-greedy, SARSA accounts for the exploration probability in its Q-value estimates.
@@ -335,11 +343,10 @@ Q-Learning (Watkins, 1989) is the foundational RL algorithm that directly learns
 
 ### Q-Learning Update Rule
 
-```
-Q(s_t, a_t) ← Q(s_t, a_t) + α · [r_t + γ·max_{a'} Q(s_{t+1}, a') - Q(s_t, a_t)]
-                                    ↑                  ↑
-                              TD Target            GREEDY max — key difference from SARSA!
-```
+$$
+Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \left[ r_t + \gamma \max_{a'} Q(s_{t+1}, a') - Q(s_t, a_t) \right]
+$$
+> **Note:** The TD Target uses the GREEDY max $\max_{a'}$, which is the key difference from SARSA!
 
 ### Q-Learning vs SARSA Comparison
 
@@ -561,8 +568,8 @@ print(f"Avg penalties per episode: {total_penalties / n_eval:.2f}")
 > States that are visited frequently converge faster than rarely-visited states. Consider using **decreasing α per state-action pair**: α(s,a) = 1/N(s,a) where N counts visits. This satisfies convergence conditions theoretically.
 
 **2. "Confusing SARSA and Q-Learning update targets"** ❌
-> SARSA: `Q(s,a) ← Q(s,a) + α·[r + γ·Q(s', a') - Q(s,a)]` where a' is the *actual next action* (from current ε-greedy policy)
-> Q-Learning: `Q(s,a) ← Q(s,a) + α·[r + γ·max_{a'} Q(s',a') - Q(s,a)]` where we take the *max over all actions*
+> SARSA: $Q(s,a) \leftarrow Q(s,a) + \alpha \left[ r + \gamma Q(s', a') - Q(s,a) \right]$ where $a'$ is the *actual next action* (from current $\epsilon$-greedy policy)
+> Q-Learning: $Q(s,a) \leftarrow Q(s,a) + \alpha \left[ r + \gamma \max_{a'} Q(s',a') - Q(s,a) \right]$ where we take the *max over all actions*
 > Mixing these up causes convergence to the wrong policy.
 
 **3. "Forgetting terminal state bootstrap"** ❌
@@ -602,9 +609,9 @@ print(f"Avg penalties per episode: {total_penalties / n_eval:.2f}")
 > **Efficiency**: Policy Iteration typically converges in **fewer outer iterations** but each iteration is expensive (full evaluation). Value Iteration has **simpler per-iteration updates** but may need more iterations. For large state spaces with expensive policy evaluation, Value Iteration is usually preferred. Both have the same asymptotic complexity when exact convergence is required.
 
 **Q4: What is bootstrapping in TD learning and why does it introduce bias?**
-> **A:** Bootstrapping means using the current estimate V(s_{t+1}) as part of the update target for V(s_t). This is "learning a guess from a guess."
+> **A:** Bootstrapping means using the current estimate $V(s_{t+1})$ as part of the update target for $V(s_t)$. This is "learning a guess from a guess."
 >
-> It introduces **bias** because V(s_{t+1}) is not the true value V^π(s_{t+1}) — it's our current approximate estimate, which is wrong especially early in training. The TD target `r + γ·V̂(s_{t+1})` is therefore a biased estimate of the true return G_t.
+> It introduces **bias** because $V(s_{t+1})$ is not the true value $V^\pi(s_{t+1})$ — it's our current approximate estimate, which is wrong especially early in training. The TD target $r + \gamma \hat{V}(s_{t+1})$ is therefore a biased estimate of the true return $G_t$.
 >
 > **Why accept bias?** Because the alternative (Monte Carlo) waits for the full return — which has zero bias but extremely high variance (the sum of many random variables). In practice, the bias from bootstrapping quickly decreases as V converges, while the variance reduction from not waiting for full episode returns provides more stable gradient updates throughout training. This is the fundamental **bias-variance tradeoff** at the heart of TD vs MC.
 
@@ -612,36 +619,33 @@ print(f"Avg penalties per episode: {total_penalties / n_eval:.2f}")
 
 ## ⚡ One-Page Flash Card {#revision}
 
-```
-╔══════════════════════════════════════════════════════════════════╗
-║        MODULE 03 — MDP, DP, TD LEARNING, Q-LEARNING             ║
-╠══════════════════════════════════════════════════════════════════╣
-║                                                                  ║
-║  BELLMAN OPTIMALITY:                                             ║
-║  V*(s) = max_a Σ P(s'|s,a)[R + γ·V*(s')]                        ║
-║  Q*(s,a) = Σ P(s'|s,a)[R + γ·max_a' Q*(s',a')]                 ║
-║                                                                  ║
-║  TD ERROR: δ_t = r_t + γ·V(s_{t+1}) - V(s_t)                   ║
-║  TD UPDATE: V(s_t) <- V(s_t) + α·δ_t                            ║
-║                                                                  ║
-║  SARSA (ON-POLICY):                                              ║
-║  Q(s,a) <- Q(s,a) + α·[r + γ·Q(s',a') - Q(s,a)]               ║
-║  where a' ~ π_ε (actual next action from policy)                 ║
-║                                                                  ║
-║  Q-LEARNING (OFF-POLICY):                                        ║
-║  Q(s,a) <- Q(s,a) + α·[r + γ·max_a' Q(s',a') - Q(s,a)]        ║
-║  where max_a' is greedy (not the action taken!)                  ║
-║                                                                  ║
-║  BIAS-VARIANCE:                                                  ║
-║  Monte Carlo: High variance, Zero bias (full return)             ║
-║  TD(0): Low variance, Some bias (bootstraps from V(s'))          ║
-║  TD(λ): Interpolates between MC (λ=1) and TD (λ=0)              ║
-║                                                                  ║
-║  Q-TABLE SIZE: n_bins^n_dims * n_actions                         ║
-║  Taxi-v3: 500 states * 6 actions = 3,000 entries                 ║
-║  CartPole (6 bins): 6^4 * 2 = 2,592 entries                     ║
-╚══════════════════════════════════════════════════════════════════╝
-```
+> [!NOTE]
+> **MODULE 03 — MDP & TD LEARNING REVISION CARD**
+> 
+> **BELLMAN EQUATIONS:**
+> $$
+> V^\pi(s) = \sum_a \pi(a|s) \sum_{s'} P(s'|s,a) \left[ R(s,a,s') + \gamma V^\pi(s') \right]
+> $$
+> $$
+> V^*(s) = \max_a \sum_{s'} P(s'|s,a) \left[ R(s,a,s') + \gamma V^*(s') \right]
+> $$
+> 
+> **DYNAMIC PROGRAMMING (Requires Model):**
+> - **Policy Iteration**: Alternate Evaluation ($V^\pi$) and Improvement ($\pi \leftarrow \text{greedy}(V^\pi)$)
+> - **Value Iteration**: Update $V(s) \leftarrow \max_a (R + \gamma V(s'))$ directly
+> 
+> **TD LEARNING (Model-Free):**
+> - **TD Error**: $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$
+> - **TD(0) Update**: $V(s_t) \leftarrow V(s_t) + \alpha \delta_t$
+> 
+> **ON-POLICY VS OFF-POLICY CONTROL:**
+> - **SARSA (On-Policy)**: $Q(s,a) \leftarrow Q(s,a) + \alpha \left[ r + \gamma Q(s',a') - Q(s,a) \right]$
+> - **Q-Learning (Off-Policy)**: $Q(s,a) \leftarrow Q(s,a) + \alpha \left[ r + \gamma \max_{a'} Q(s',a') - Q(s,a) \right]$
+> 
+> **COMMON PITFALLS:**
+> 1. Terminated state target is $r_t$, not $r_t + \gamma V(s_{t+1})$!
+> 2. Q-Learning overestimates values due to $\max$ operator.
+> 3. Not exploring enough (must use $\epsilon$-greedy).
 
 ---
 

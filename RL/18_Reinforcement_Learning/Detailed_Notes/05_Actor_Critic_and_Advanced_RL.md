@@ -20,7 +20,7 @@
 
 ## 🌍 Start Here: The Big Picture {#big-picture}
 
-> **TL;DR:** Actor-Critic methods combine the best of policy gradients (direct optimization) and value learning (low variance via bootstrapping). The **Actor** (policy π_θ) outputs actions; the **Critic** (value V_φ) evaluates states to compute the **advantage** signal. PPO is the most widely used modern RL algorithm — it extends A3C with a clipped surrogate objective that prevents catastrophically large policy updates. TF-Agents is Google's production-grade RL library built on TensorFlow 2.
+> **TL;DR:** Actor-Critic methods combine the best of policy gradients (direct optimization) and value learning (low variance via bootstrapping). The **Actor** (policy $\pi_\theta$) outputs actions; the **Critic** (value $V_\phi$) evaluates states to compute the **advantage** signal. PPO is the most widely used modern RL algorithm — it extends A3C with a clipped surrogate objective that prevents catastrophically large policy updates. TF-Agents is Google's production-grade RL library built on TensorFlow 2.
 
 **The Real-World Analogy 🎪:**
 An actor on stage performs (makes decisions — the **Actor**). A director watches, assesses the performance, and provides feedback like "that scene was 20% better than average" (the **Critic**). The actor uses this feedback to improve future performances. Crucially, the director doesn't tell the actor *exactly* what to do — they only rate relative quality. This feedback enables the actor to discover optimal behavior independently while learning faster than solo practice (REINFORCE alone).
@@ -31,25 +31,23 @@ An actor on stage performs (makes decisions — the **Actor**). A director watch
 
 ### The Core Idea
 
-Actor-Critic methods address REINFORCE's **high variance problem** by replacing the full Monte Carlo return G_t with a lower-variance signal: the **advantage function** A(s,a).
+Actor-Critic methods address REINFORCE's **high variance problem** by replacing the full Monte Carlo return $G_t$ with a lower-variance signal: the **advantage function** $A(s,a)$.
 
-```
-REINFORCE gradient:
-  ∇_θ J(θ) ≈ G_t · ∇_θ log π_θ(a_t|s_t)
-  Problem: G_t has very high variance (full-episode sum of random rewards)
+**REINFORCE gradient**:
+$$ \nabla_\theta J(\theta) \approx G_t \nabla_\theta \log \pi_\theta(a_t|s_t) $$
+Problem: $G_t$ has very high variance (full-episode sum of random rewards)
 
-ACTOR-CRITIC gradient:
-  ∇_θ J(θ) ≈ A(s_t, a_t) · ∇_θ log π_θ(a_t|s_t)
-  Advantage: A(s,a) = Q(s,a) - V(s) = r + γ·V(s') - V(s) = TD error!
-  Benefit: Low variance (only ONE step of stochasticity, not full episode)
-```
+**ACTOR-CRITIC gradient**:
+$$ \nabla_\theta J(\theta) \approx A(s_t, a_t) \nabla_\theta \log \pi_\theta(a_t|s_t) $$
+Advantage: $A(s,a) = Q(s,a) - V(s) = r + \gamma V(s') - V(s)$ = TD error!
+Benefit: Low variance (only ONE step of stochasticity, not full episode)
 
 ### Architecture Diagram
 
 ![Actor Critic Flow](../Visuals/14_actor_critic_flow.png)
 
-```
-STATE s_t
+```text
+STATE sₜ
     │
     ├──────────────────────────────────────────────┐
     │                                              │
@@ -60,26 +58,29 @@ STATE s_t
 │ (Policy  │                              │ (Value Net)  │
 │ Network) │                              └──────────────┘
 └──────────┘                                      │
-    │                                             │ V(s_t) = baseline
-    │ action a_t                                  │
+    │                                             │ V(sₜ) = baseline
+    │ action aₜ                                   │
     ▼                                             │
 ENVIRONMENT                                       │
     │                                             │
-    │ r_t, s_{t+1}                                │
+    │ rₜ, sₜ₊₁                                    │
     ▼                                             │
 ADVANTAGE:                                        │
-  A(s_t,a_t) = r_t + γ·V_φ(s_{t+1}) - V_φ(s_t) ─┘
-  (= TD error δ_t)
-
-ACTOR UPDATE:  θ ← θ + α_actor  · A(s_t,a_t) · ∇_θ log π_θ(a_t|s_t)
-CRITIC UPDATE: φ ← φ - α_critic · ∇_φ (r_t + γ·V_φ(s_{t+1}) - V_φ(s_t))²
+  A(sₜ,aₜ) = rₜ + γ V_φ(sₜ₊₁) - V_φ(sₜ) ──────────┘
+  (= TD error δₜ)
 ```
+
+**ACTOR UPDATE**:
+$$ \theta \leftarrow \theta + \alpha_{\text{actor}} A(s_t,a_t) \nabla_\theta \log \pi_\theta(a_t|s_t) $$
+
+**CRITIC UPDATE**:
+$$ \phi \leftarrow \phi - \alpha_{\text{critic}} \nabla_\phi \left( r_t + \gamma V_\phi(s_{t+1}) - V_\phi(s_t) \right)^2 $$
 
 ### Two-Network vs Shared-Network Architectures
 
 | Design | Description | When to Use |
 |--------|-------------|------------|
-| **Separate networks** | Actor: π_θ, Critic: V_φ (independent params) | When actor/critic have very different input needs |
+| **Separate networks** | Actor: $\pi_\theta$, Critic: $V_\phi$ (independent params) | When actor/critic have very different input needs |
 | **Shared trunk** | Common feature extractor, separate output heads | Most common — better feature sharing, faster |
 
 **Shared Architecture (Most Common):**
@@ -122,45 +123,41 @@ A2C is the synchronous version of A3C (covered next). It's simpler to implement 
 
 ### A2C Algorithm
 
-```
-A2C ALGORITHM:
+**A2C ALGORITHM:**
 ─────────────────────────────────────────────────────────
-Hyperparams: n_steps=5 (TD steps), γ=0.99, α_actor=5e-3, α_critic=1e-3
-             entropy_coef=0.01 (exploration bonus)
+**Hyperparams**: $n_{\text{steps}}=5$ (TD steps), $\gamma=0.99$, $\alpha_{\text{actor}}=5 \times 10^{-3}$, $\alpha_{\text{critic}}=10^{-3}$
+             $\text{entropy\_coef}=0.01$ (exploration bonus)
 
-REPEAT:
-  1. Collect n_steps transitions following current policy π_θ:
-     {(s_0, a_0, r_0, s_1), (s_1, a_1, r_1, s_2), ..., (s_{n-1}, a_{n-1}, r_{n-1}, s_n)}
+**REPEAT**:
+  1. Collect $n_{\text{steps}}$ transitions following current policy $\pi_\theta$:
+     $\{(s_0, a_0, r_0, s_1), (s_1, a_1, r_1, s_2), \dots, (s_{n-1}, a_{n-1}, r_{n-1}, s_n)\}$
   
-  2. Compute returns and advantages:
-     R_n = V_φ(s_n)   if not terminal, else 0
-     For t = n-1, ..., 0:
-       R_t = r_t + γ·R_{t+1}
-       A_t = R_t - V_φ(s_t)   (advantage)
+  2. Compute returns and advantages:<br>
+     $R_n = V_\phi(s_n)$ if not terminal, else 0<br>
+     For $t = n-1, \dots, 0$:<br>
+     &nbsp;&nbsp;&nbsp;&nbsp;$R_t = r_t + \gamma R_{t+1}$<br>
+     &nbsp;&nbsp;&nbsp;&nbsp;$A_t = R_t - V_\phi(s_t)$ (advantage)
   
-  3. Compute losses:
-     Actor loss: L_actor  = -Σ_t A_t · log π_θ(a_t|s_t)
-     Critic loss: L_critic = Σ_t (R_t - V_φ(s_t))²
-     Entropy bonus: L_entropy = -Σ_t Σ_a π(a|s_t)·log π(a|s_t)
+  3. Compute losses:<br>
+     Actor loss: $L_{\text{actor}} = -\sum_t A_t \log \pi_\theta(a_t|s_t)$<br>
+     Critic loss: $L_{\text{critic}} = \sum_t (R_t - V_\phi(s_t))^2$<br>
+     Entropy bonus: $L_{\text{entropy}} = -\sum_t \sum_a \pi(a|s_t) \log \pi(a|s_t)$
      
-     Total: L = L_actor + c_v·L_critic - c_e·L_entropy
+     Total: $L = L_{\text{actor}} + c_v L_{\text{critic}} - c_e L_{\text{entropy}}$
   
-  4. Update θ, φ via gradient descent on L
+  4. Update $\theta, \phi$ via gradient descent on $L$
 ─────────────────────────────────────────────────────────
-```
 
 ### The Entropy Bonus
 
 The entropy term encourages **exploration** by discouraging the policy from becoming too deterministic too quickly:
 
-```
-H(π(·|s)) = -Σ_a π(a|s) · log π(a|s)
+$$ H(\pi(\cdot|s)) = -\sum_a \pi(a|s) \log \pi(a|s) $$
 
-High entropy: uniform distribution → maximum exploration
-Low entropy: peaked distribution → exploitation
-```
+- **High entropy**: uniform distribution $\rightarrow$ maximum exploration
+- **Low entropy**: peaked distribution $\rightarrow$ exploitation
 
-Adding `+c_e · H(π)` to the objective penalizes overly confident (low-entropy) policies.
+Adding $+c_e H(\pi)$ to the objective penalizes overly confident (low-entropy) policies.
 
 ### Full A2C Implementation
 
@@ -321,29 +318,22 @@ Global updates via lock-free async SGD
 
 ### A3C Algorithm (Per Worker)
 
-```
-WORKER THREAD:
+**WORKER THREAD:**
 ──────────────────────────────────────────────────────
-Pull latest global weights: θ_local ← θ_global
-
-t_start = t
-WHILE (t - t_start < t_max) AND NOT terminal:
-  Execute action a_t ~ π(a|s_t; θ_local)
-  Observe r_t, s_{t+1}
-  t = t + 1
-
-R = V(s_t; θ_local) if not terminal, else 0
-
-Accumulate gradients:
-  FOR t = t-1 downto t_start:
-    R = r_t + γ·R
-    Accumulate: dθ += ∂/∂θ [ log π(a_t|s_t; θ) · (R - V(s_t;φ)) ]
-                     + β · ∂/∂θ H(π(s_t; θ))
-    Accumulate: dφ += ∂/∂φ (R - V(s_t;φ))²
-
-Async update global: θ_global += dθ; φ_global += dφ
+Pull latest global weights: $\theta_{\text{local}} \leftarrow \theta_{\text{global}}$<br><br>
+$t_{\text{start}} = t$<br>
+**WHILE** ($t - t_{\text{start}} < t_{\text{max}}$) AND NOT terminal:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Execute action $a_t \sim \pi(a|s_t; \theta_{\text{local}})$<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Observe $r_t, s_{t+1}$<br>
+&nbsp;&nbsp;&nbsp;&nbsp;$t = t + 1$<br><br>
+$R = V(s_t; \theta_{\text{local}})$ if not terminal, else 0<br><br>
+Accumulate gradients:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;**FOR** $t = t-1$ **downto** $t_{\text{start}}$:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$R = r_t + \gamma R$<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Accumulate: $d\theta \mathrel{+}= \nabla_\theta \left[ \log \pi(a_t|s_t; \theta) (R - V(s_t;\phi)) \right] + \beta \nabla_\theta H(\pi(s_t; \theta))$<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Accumulate: $d\phi \mathrel{+}= \nabla_\phi (R - V(s_t;\phi))^2$<br><br>
+Async update global: $\theta_{\text{global}} \mathrel{+}= d\theta$; $\phi_{\text{global}} \mathrel{+}= d\phi$
 ──────────────────────────────────────────────────────
-```
 
 > [!NOTE]
 > **A3C vs A2C**: Modern practice (as of 2018+) often prefers **A2C** (synchronous) over **A3C** (asynchronous) because:
@@ -425,8 +415,8 @@ PPO (Schulman et al., 2017) is the **most widely used RL algorithm** today. It e
 ### The Core Problem: Trust Region
 
 Standard policy gradient updates can take too large a step:
-- Old policy: P(left|s) = 0.5
-- Gradient update: make left 2x more likely → P(left|s) = 1.0
+- Old policy: $P(\text{left}|s) = 0.5$
+- Gradient update: make left 2x more likely → $P(\text{left}|s) = 1.0$
 - Problem: The new policy is so different from the data-collecting policy that the gradient estimate is completely wrong (importance sampling error)
 
 ### PPO's Solution: Clipped Surrogate Objective
@@ -434,49 +424,37 @@ Standard policy gradient updates can take too large a step:
 ![PPO Clipped Objective](../Visuals/15_ppo_clipped_objective.png)
 
 Define the **probability ratio**:
-```
-r_t(θ) = π_θ(a_t|s_t) / π_{θ_old}(a_t|s_t)
-```
-- r=1: new policy same as old (no update)
-- r>1: action more probable under new policy
-- r<1: action less probable under new policy
+$$ r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{\text{old}}}(a_t|s_t)} $$
+- $r=1$: new policy same as old (no update)
+- $r>1$: action more probable under new policy
+- $r<1$: action less probable under new policy
 
 **PPO-Clip Objective:**
-```
-L_CLIP(θ) = E_t [ min(r_t(θ)·A_t,  clip(r_t(θ), 1-ε, 1+ε)·A_t) ]
+$$ L^{\text{CLIP}}(\theta) = \mathbb{E}_t \left[ \min\left( r_t(\theta) A_t, \text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon) A_t \right) \right] $$
+where $\epsilon = 0.2$ (clip range — typical value)
 
-where ε = 0.2 (clip range — typical value)
-```
-
-The `clip` function limits r_t to [1-ε, 1+ε] = [0.8, 1.2] when ε=0.2.
+The `clip` function limits $r_t$ to $[1-\epsilon, 1+\epsilon] = [0.8, 1.2]$ when $\epsilon=0.2$.
 
 ### Why Clipping Works
 
-```
-Case 1: A_t > 0 (action was GOOD — increase its probability):
-  If r_t > 1+ε: policy is already boosting this action too much → clip, stop
-  If r_t ≤ 1+ε: update normally (increase probability)
+**Case 1:** $A_t > 0$ (action was GOOD — increase its probability):
+- If $r_t > 1+\epsilon$: policy is already boosting this action too much $\rightarrow$ clip, stop
+- If $r_t \leq 1+\epsilon$: update normally (increase probability)
 
-Case 2: A_t < 0 (action was BAD — decrease its probability):
-  If r_t < 1-ε: policy has already reduced this action too much → clip, stop
-  If r_t ≥ 1-ε: update normally (decrease probability)
+**Case 2:** $A_t < 0$ (action was BAD — decrease its probability):
+- If $r_t < 1-\epsilon$: policy has already reduced this action too much $\rightarrow$ clip, stop
+- If $r_t \geq 1-\epsilon$: update normally (decrease probability)
 
-Result: The update NEVER moves the policy more than ε away from the old policy.
-       This is a soft "trust region" constraint — much simpler than TRPO's KL constraint.
-```
+**Result**: The update NEVER moves the policy more than $\epsilon$ away from the old policy. This is a soft "trust region" constraint — much simpler than TRPO's KL constraint.
 
 ### PPO Full Loss Function
 
-```
-L_PPO(θ, φ) = L_CLIP(θ)                      (actor: maximize clipped objective)
-            - c_v · L_VALUE(φ)               (critic: minimize value error)
-            + c_e · H(π_θ)                   (entropy: exploration bonus)
-
-where:
-  L_VALUE = E_t [(V_φ(s_t) - R_t)²]
-  c_v = 0.5  (value loss coefficient)
-  c_e = 0.01 (entropy coefficient)
-```
+$$ L^{\text{PPO}}(\theta, \phi) = L^{\text{CLIP}}(\theta) - c_v L^{\text{VALUE}}(\phi) + c_e H(\pi_\theta) $$
+- **Actor**: maximize clipped objective $L^{\text{CLIP}}$
+- **Critic**: minimize value error $L^{\text{VALUE}}(\phi) = \mathbb{E}_t \left[ (V_\phi(s_t) - R_t)^2 \right]$
+- **Entropy**: exploration bonus $H(\pi_\theta)$
+- $c_v = 0.5$ (value loss coefficient)
+- $c_e = 0.01$ (entropy coefficient)
 
 ### PPO Implementation
 
@@ -557,23 +535,20 @@ def ppo_train_step(states, actions, old_log_probs, advantages, returns):
 
 GAE (Schulman et al., 2015) provides a low-variance advantage estimate by blending n-step TD errors via exponential decay:
 
-```
-A_t^{GAE(γ,λ)} = Σ_{l=0}^{∞} (γλ)^l · δ_{t+l}
+$$ A_t^{\text{GAE}(\gamma,\lambda)} = \sum_{l=0}^{\infty} (\gamma\lambda)^l \delta_{t+l} $$
+where $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$ (TD error)
 
-where δ_t = r_t + γ·V(s_{t+1}) - V(s_t)  (TD error)
-
-λ=0: A_t = δ_t    (pure TD, low variance, high bias)
-λ=1: A_t = Σ γ^l·δ_{t+l} = G_t - V(s_t)  (Monte Carlo, zero bias, high variance)
-λ=0.95: Optimal trade-off in practice
-```
+- $\lambda=0$: $A_t = \delta_t$ (pure TD, low variance, high bias)
+- $\lambda=1$: $A_t = \sum \gamma^l \delta_{t+l} = G_t - V(s_t)$ (Monte Carlo, zero bias, high variance)
+- $\lambda=0.95$: Optimal trade-off in practice
 
 ### Key PPO Properties
 
 | Property | Value |
 |---------|-------|
-| **Clip range ε** | 0.1–0.3 (default 0.2) |
+| **Clip range $\epsilon$** | 0.1–0.3 (default 0.2) |
 | **PPO epochs** | 3–10 (reuses collected data for multiple updates) |
-| **GAE λ** | 0.9–0.99 (default 0.95) |
+| **GAE $\lambda$** | 0.9–0.99 (default 0.95) |
 | **Entropy coefficient** | 0.0–0.01 |
 | **Min-batch size** | 64–2048 |
 
@@ -850,22 +825,22 @@ if approx_kl > 1.5 * target_kl:  # target_kl = 0.01-0.05
 ## 🎤 Interview Q&A {#interview}
 
 **Q1: What is the advantage function in Actor-Critic and why is it preferable to raw returns?**
-> **A:** The advantage function A(s_t, a_t) = Q(s_t, a_t) - V(s_t) measures "how much better is action a_t compared to the average action in state s_t?"
+> **A:** The advantage function $A(s_t, a_t) = Q(s_t, a_t) - V(s_t)$ measures "how much better is action $a_t$ compared to the average action in state $s_t$?"
 >
-> In practice, it's estimated via the TD error: A(s_t, a_t) ≈ r_t + γ·V(s_{t+1}) - V(s_t)
+> In practice, it's estimated via the TD error: $A(s_t, a_t) \approx r_t + \gamma V(s_{t+1}) - V(s_t)$
 >
-> **Why preferable to raw returns G_t**:
-> 1. **Lower variance**: G_t = sum of all future random rewards (T steps of noise). A_t depends on only ONE step of randomness (r_t) plus V estimates.
+> **Why preferable to raw returns $G_t$**:
+> 1. **Lower variance**: $G_t$ = sum of all future random rewards ($T$ steps of noise). $A_t$ depends on only ONE step of randomness ($r_t$) plus $V$ estimates.
 > 2. **Relative signal**: A positive advantage means "this action is better than average" — much more informative than "this action led to total return 127 (absolute)." Absolute returns vary wildly with episode length; advantages are normalized relative to the current policy's value.
-> 3. **Zero-mean property**: E_a[A(s,a)] = 0 by definition, giving balanced positive/negative signals — increases probability of above-average actions, decreases below-average.
+> 3. **Zero-mean property**: $\mathbb{E}_a[A(s,a)] = 0$ by definition, giving balanced positive/negative signals — increases probability of above-average actions, decreases below-average.
 
 **Q2: Explain PPO's clipped objective. What problem does it solve?**
-> **A:** Standard policy gradient (REINFORCE, A3C) can take arbitrarily large update steps. When an action has a very high advantage A_t, the gradient `A_t · ∇ log π` is enormous, pushing the policy far from the data-generating distribution. But our gradient estimates are only valid near the old policy! Taking huge steps leads to "policy collapse" — the new policy is so different that old trajectories provide no useful gradient signal, and performance catastrophically degrades.
+> **A:** Standard policy gradient (REINFORCE, A3C) can take arbitrarily large update steps. When an action has a very high advantage $A_t$, the gradient $A_t \nabla \log \pi$ is enormous, pushing the policy far from the data-generating distribution. But our gradient estimates are only valid near the old policy! Taking huge steps leads to "policy collapse" — the new policy is so different that old trajectories provide no useful gradient signal, and performance catastrophically degrades.
 >
-> PPO solves this with the probability ratio r_t(θ) = π_θ(a_t|s_t) / π_{θ_old}(a_t|s_t) and clipped objective:
-> `L = min(r_t·A_t, clip(r_t, 1-ε, 1+ε)·A_t)`
+> PPO solves this with the probability ratio $r_t(\theta) = \pi_\theta(a_t|s_t) / \pi_{\theta_{\text{old}}}(a_t|s_t)$ and clipped objective:
+> $L = \min(r_t A_t, \text{clip}(r_t, 1-\epsilon, 1+\epsilon) A_t)$
 >
-> If r_t > 1+ε (we've already increased the action's probability by >20%), the gradient is clamped to zero — no further push in that direction. Similarly if r_t < 1-ε. This **soft trust region** keeps the new policy within [0.8, 1.2]× the old policy's action probabilities, ensuring training data remains approximately on-policy. Crucially, it achieves TRPO-like stability with much simpler first-order optimization (no conjugate gradients needed).
+> If $r_t > 1+\epsilon$ (we've already increased the action's probability by >20%), the gradient is clamped to zero — no further push in that direction. Similarly if $r_t < 1-\epsilon$. This **soft trust region** keeps the new policy within $[0.8, 1.2]\times$ the old policy's action probabilities, ensuring training data remains approximately on-policy. Crucially, it achieves TRPO-like stability with much simpler first-order optimization (no conjugate gradients needed).
 
 **Q3: What is the key difference between A3C and A2C? Which is better?**
 > **A:** 
@@ -893,38 +868,35 @@ if approx_kl > 1.5 * target_kl:  # target_kl = 0.01-0.05
 
 ## ⚡ One-Page Flash Card {#revision}
 
-```
-╔══════════════════════════════════════════════════════════════════╗
-║           MODULE 05 — ACTOR-CRITIC, A3C, PPO, TF-AGENTS         ║
-╠══════════════════════════════════════════════════════════════════╣
-║                                                                  ║
-║  ACTOR-CRITIC:                                                   ║
-║  Actor: pi_theta(a|s) -> actions                                 ║
-║  Critic: V_phi(s) -> state value (baseline)                      ║
-║  Advantage: A(s,a) = r + gamma*V(s') - V(s)  = TD error!        ║
-║  Actor loss: -A * log(pi(a|s))  (gradient ASCENT)                ║
-║  Critic loss: (R_t - V(s))^2   (MSE regression)                 ║
-║                                                                  ║
-║  PPO (MOST POPULAR):                                             ║
-║  ratio = pi_new(a|s) / pi_old(a|s)                               ║
-║  L_clip = min(ratio*A, clip(ratio,1-e,1+e)*A)  [e=0.2]          ║
-║  PPO_EPOCHS=10: reuse same rollout for 10 gradient steps!        ║
-║  GAE lambda=0.95: trade variance/bias in advantage estimation    ║
-║                                                                  ║
-║  A3C: Async parallel workers -> global network                   ║
-║  A2C: Sync parallel workers (GPU-friendly, more stable)          ║
-║                                                                  ║
-║  TF-AGENTS KEY FLOW:                                             ║
-║  TFPyEnvironment -> Agent -> ReplayBuffer -> Driver -> train()   ║
-║                                                                  ║
-║  BEST PRACTICES:                                                 ║
-║  - Gradient clip (max_norm=0.5)                                  ║
-║  - Entropy bonus (0.01) for exploration                          ║
-║  - GAE for low-variance advantages                               ║
-║  - PPO KL early stopping if kl > 1.5*target_kl                  ║
-║  - For general tasks: DEFAULT to PPO                             ║
-╚══════════════════════════════════════════════════════════════════╝
-```
+> [!NOTE]
+> **MODULE 05 — ACTOR-CRITIC & PPO REVISION CARD**
+> 
+> **ACTOR-CRITIC:**
+> - **Actor**: $\pi_\theta(a|s) \rightarrow$ actions
+> - **Critic**: $V_\phi(s) \rightarrow$ state value (baseline)
+> - **Advantage**: $A(s,a) = r + \gamma V(s') - V(s) = \text{TD error!}$
+> - **Actor loss**: $-A \log(\pi(a|s))$ (gradient ASCENT)
+> - **Critic loss**: $(R_t - V(s))^2$ (MSE regression)
+> 
+> **PPO (MOST POPULAR):**
+> $$ r_t(\theta) = \frac{\pi_{\text{new}}(a|s)}{\pi_{\text{old}}(a|s)} $$
+> $$ L^{\text{CLIP}} = \min(r_t A, \text{clip}(r_t, 1-\epsilon, 1+\epsilon)A) \quad [\epsilon=0.2] $$
+> - **PPO_EPOCHS=10**: reuse same rollout for 10 gradient steps!
+> - **GAE $\lambda=0.95$**: trade variance/bias in advantage estimation
+> 
+> **A3C VS A2C:**
+> - **A3C**: Async parallel workers $\rightarrow$ global network
+> - **A2C**: Sync parallel workers (GPU-friendly, more stable)
+> 
+> **TF-AGENTS KEY FLOW:**
+> `TFPyEnvironment` $\rightarrow$ `Agent` $\rightarrow$ `ReplayBuffer` $\rightarrow$ `Driver` $\rightarrow$ `train()`
+> 
+> **BEST PRACTICES:**
+> 1. Gradient clip (`max_norm=0.5`)
+> 2. Entropy bonus ($0.01$) for exploration
+> 3. GAE for low-variance advantages
+> 4. PPO KL early stopping if `kl > 1.5 * target_kl`
+> 5. For general tasks: DEFAULT to PPO
 
 ---
 

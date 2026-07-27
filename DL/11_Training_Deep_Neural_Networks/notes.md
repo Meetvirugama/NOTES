@@ -5,10 +5,9 @@
 
 ---
 
-## 🖼️ Visual Gallery (Python-Generated Graphs)
+## 🖼️ Visual Gallery (AI-Generated Diagrams)
 
 > All visuals are in the [`Visuals/`](Visuals/) folder and are embedded in each module.
-> Re-generate anytime: `python3 generate_visuals.py`
 
 | # | Graph | Module | File |
 |---|-------|--------|------|
@@ -36,6 +35,7 @@
 | 22 | Transfer Learning Using MobileNet | 3 | [22_transfer_learning_mobilenet.jpg](Visuals/22_transfer_learning_mobilenet.jpg) |
 | 23 | Evolution of Gradient-Based Optimizers | 4 | [23_optimizer_evolution.jpg](Visuals/23_optimizer_evolution.jpg) |
 | 24 | Dropout Concept | 6 | [24_dropout_concept.jpg](Visuals/24_dropout_concept.jpg) |
+| 25 | Learning Rate Balloon Analogy | 5 | [25_learning_rate_balloon_analogy.jpg](Visuals/25_learning_rate_balloon_analogy.jpg) |
 
 ---
 

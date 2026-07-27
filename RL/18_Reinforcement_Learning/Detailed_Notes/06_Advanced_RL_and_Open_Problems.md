@@ -108,12 +108,12 @@ RLHF PIPELINE:
    - Human selects preferred output
    - This avoids having to define explicit reward!
 
-3. Train reward model R_φ on preference data:
+3. Train reward model $R_\phi$ on preference data:
    - Input: (prompt, response) pair
    - Output: scalar score predicting human preference
 
 4. Use PPO to fine-tune language model:
-   - Maximize R_φ(response) while minimizing KL from original model
+   - Maximize $R_\phi(\text{response})$ while minimizing KL from original model
    - KL penalty: prevents "reward hacking" the learned reward model
 ─────────────────────────────────────────────────────────
 ```
@@ -218,9 +218,9 @@ LOW-LEVEL POLICY (Worker):
 ```
 
 **Options Framework (Sutton et al.):**
-An "option" is a temporally extended action: (initiation set, π, termination condition)
+An "option" is a temporally extended action: (initiation set, $\pi$, termination condition)
 - Initiation set: states where option can start
-- π: policy executed during the option
+- $\pi$: policy executed during the option
 - Termination condition: when to end the option
 
 ```python
@@ -257,32 +257,28 @@ In environments with **extremely sparse rewards** (e.g., only +1 at the very end
 
 The agent receives an **intrinsic reward** in addition to the environment's extrinsic reward:
 
-```
-Total reward = Extrinsic reward (from environment) + β · Intrinsic reward (curiosity)
-```
+$$ \text{Total reward} = \text{Extrinsic reward (from environment)} + \beta \text{ Intrinsic reward (curiosity)} $$
 
 ### Intrinsic Curiosity Module (ICM, Pathak et al., 2017)
 
-```
-ICM ARCHITECTURE:
+**ICM ARCHITECTURE:**
 ──────────────────────────────────────────────────────────────────
-State s_t → [Encoder φ] → Feature f_t
-State s_{t+1} → [Encoder φ] → Feature f_{t+1}
+State $s_t \rightarrow$ [Encoder $\phi$] $\rightarrow$ Feature $f_t$
+State $s_{t+1} \rightarrow$ [Encoder $\phi$] $\rightarrow$ Feature $f_{t+1}$
                                    ▲
-Action a_t → [Forward Model] ─────┘
-             Predicts f_{t+1} given f_t and a_t
+Action $a_t \rightarrow$ [Forward Model] ─────┘
+             Predicts $f_{t+1}$ given $f_t$ and $a_t$
              
-INTRINSIC REWARD = Prediction Error:
-  r_int = ||φ(s_{t+1}) - Forward_Model(φ(s_t), a_t)||²
+**INTRINSIC REWARD = Prediction Error:**
+$$ r_{\text{int}} = ||\phi(s_{t+1}) - \text{Forward\_Model}(\phi(s_t), a_t)||^2 $$
   
-HIGH prediction error → agent went somewhere NOVEL/SURPRISING → HIGH curiosity reward
-LOW prediction error  → agent visited a familiar state → LOW curiosity reward
+HIGH prediction error $\rightarrow$ agent went somewhere NOVEL/SURPRISING $\rightarrow$ HIGH curiosity reward
+LOW prediction error  $\rightarrow$ agent visited a familiar state $\rightarrow$ LOW curiosity reward
 
-INVERSE MODEL simultaneously trained:
-  Predicts a_t from φ(s_t) and φ(s_{t+1})
-  Ensures φ captures task-relevant features (not arbitrary ones)
+**INVERSE MODEL simultaneously trained:**
+  Predicts $a_t$ from $\phi(s_t)$ and $\phi(s_{t+1})$
+  Ensures $\phi$ captures task-relevant features (not arbitrary ones)
 ──────────────────────────────────────────────────────────────────
-```
 
 > [!NOTE]
 > **"Noisy TV problem"**: A purely curiosity-driven agent can get stuck staring at a TV showing random noise — always surprising, always high intrinsic reward, but completely irrelevant to the actual task. This motivates more sophisticated exploration methods (Count-based, RND — Random Network Distillation).
@@ -343,7 +339,7 @@ ALPHAGO COMPONENTS:
    - 80% win rate vs SL network after RL fine-tuning
 
 3. VALUE NETWORK:
-   - Predicts P(win) from any board position
+   - Predicts $P(\text{win})$ from any board position
    - Trained on self-play games
    - Input: board position → Output: win probability [0,1]
    
@@ -386,16 +382,16 @@ ALPHAZERO TRAINING LOOP:
         - Selection: choose action maximizing Q + U(exploration bonus)
         - Expansion: expand leaf with neural network policy prior
         - Backup: update Q-values along search path
-     b. Action π_MCTS = visit_count_distribution(MCTS tree)
-     c. Play action sampled from π_MCTS
+      b. Action $\pi_{\text{MCTS}} = \text{visit\_count\_distribution}(\text{MCTS tree})$
+      c. Play action sampled from $\pi_{\text{MCTS}}$
    
-   Store (s, π_MCTS, z) where z = final game result (+1/-1/0)
+   Store $(s, \pi_{\text{MCTS}}, z)$ where $z = \text{final game result } (+1/-1/0)$
 
 2. NEURAL NETWORK TRAINING:
-   Network: (s) → (p, v)  [policy p, value v]
+   Network: $(s) \rightarrow (p, v)$  [policy $p$, value $v$]
    Loss:
-     L = (z - v)²  +  CrossEntropy(π_MCTS, p)
-         ↑ value    ↑ policy
+   $$ L = (z - v)^2  +  \text{CrossEntropy}(\pi_{\text{MCTS}}, p) $$
+   (where $(z-v)^2$ is value loss and $\text{CrossEntropy}$ is policy loss)
    Target: learn to predict MCTS policy and final game outcome
 
 3. UPDATE NETWORK → Repeat from step 1
@@ -421,50 +417,46 @@ ALPHAZERO TRAINING LOOP:
 
 ### Model-Free vs Model-Based
 
-```
-MODEL-FREE RL:
+**MODEL-FREE RL:**
   Agent ─── action ──► Environment ─── observation+reward ──► Agent
-  Learn Q or π directly from experience
+  Learn $Q$ or $\pi$ directly from experience
   Sample inefficient (needs many real environment interactions)
   No planning capability
 
-MODEL-BASED RL:
+**MODEL-BASED RL:**
   Agent ─── action ──► Environment ─── observation+reward ──► Agent
                │                                                 │
-               └── Learn P(s'|s,a), R(s,a) ◄───────────────────┘
+               └── Learn $P(s'|s,a)$, $R(s,a)$ ◄─────────────────┘
                Then: use learned model to PLAN (simulate rollouts)
                More sample efficient, but model errors compound
-```
 
 ### Dyna Architecture (Sutton, 1990)
 
-```
-DYNA ALGORITHM:
+**DYNA ALGORITHM:**
 ──────────────────────────────────────────────────────
-Initialize: Q(s,a) = 0, Model(s,a) = ∅
+Initialize: $Q(s,a) = 0$, $\text{Model}(s,a) = \emptyset$
 
-For each step:
+**For each step**:
   1. REAL EXPERIENCE:
-     Select a_t using ε-greedy(Q)
-     Observe r_t, s_{t+1}
-     Update Q directly (Q-Learning):
-       Q(s_t,a_t) += α·[r_t + γ·max Q(s_{t+1},·) - Q(s_t,a_t)]
+     Select $a_t$ using $\epsilon$-greedy($Q$)
+     Observe $r_t, s_{t+1}$
+     Update $Q$ directly (Q-Learning):
+       $Q(s_t,a_t) \mathrel{+}= \alpha \left[ r_t + \gamma \max_{a'} Q(s_{t+1},a') - Q(s_t,a_t) \right]$
   
   2. MODEL LEARNING:
-     Update model: Model(s_t, a_t) ← (r_t, s_{t+1})
+     Update model: $\text{Model}(s_t, a_t) \leftarrow (r_t, s_{t+1})$
   
-  3. PLANNING (n simulated steps):
-     For k = 1, ..., n:
-       s_sim = random previously-seen state
-       a_sim = random action taken from s_sim
-       r_sim, s_sim' = Model(s_sim, a_sim)  ← Simulated transition!
-       Q(s_sim, a_sim) += α·[r_sim + γ·max Q(s_sim',·) - Q(s_sim, a_sim)]
+  3. PLANNING ($n$ simulated steps):
+     **For** $k = 1, \dots, n$:
+       $s_{\text{sim}} = $ random previously-seen state
+       $a_{\text{sim}} = $ random action taken from $s_{\text{sim}}$
+       $r_{\text{sim}}, s'_{\text{sim}} = \text{Model}(s_{\text{sim}}, a_{\text{sim}})$  $\leftarrow$ Simulated transition!
+       $Q(s_{\text{sim}}, a_{\text{sim}}) \mathrel{+}= \alpha \left[ r_{\text{sim}} + \gamma \max_{a'} Q(s'_{\text{sim}},a') - Q(s_{\text{sim}}, a_{\text{sim}}) \right]$
 ──────────────────────────────────────────────────────
 
-n=0: Pure Q-Learning (no planning)
-n=5: 5 planning steps per real step → 5× sample efficiency!
-n=50: 50 planning steps → 50× sample efficiency!
-```
+- $n=0$: Pure Q-Learning (no planning)
+- $n=5$: 5 planning steps per real step $\rightarrow 5\times$ sample efficiency!
+- $n=50$: 50 planning steps $\rightarrow 50\times$ sample efficiency!
 
 **Key benefit**: For every real environment interaction, we get n "free" simulated updates — dramatically improving sample efficiency.
 
@@ -483,9 +475,9 @@ USE CASE: Medical treatment decisions
   - Learn best treatment policy from this fixed data
 
 CHALLENGE: Distribution shift
-  - Training data from some behavior policy μ
-  - Learned policy π may try actions not in dataset → Q-values extrapolated
-  - Extrapolation errors → poor policy (called "deadly triad")
+  - Training data from some behavior policy $\mu$
+  - Learned policy $\pi$ may try actions not in dataset $\rightarrow$ Q-values extrapolated
+  - Extrapolation errors $\rightarrow$ poor policy (called "deadly triad")
 
 SOLUTION: Conservative Q-Learning (CQL), IQL, TD3+BC
   - Add penalty term for actions not represented in dataset
@@ -549,10 +541,10 @@ DAGGER ALGORITHM:
 Dataset D = expert demonstrations
 
 REPEAT:
-  1. Train policy π_i on D (behavioral cloning)
-  2. Run π_i in environment, collect state trajectory
+  1. Train policy $\pi_i$ on $D$ (behavioral cloning)
+  2. Run $\pi_i$ in environment, collect state trajectory
   3. Ask EXPERT to label the trajectory states (with correct actions)
-  4. Add expert-labeled data to D: D ← D ∪ {(s, expert(s)) for s in trajectory}
+  4. Add expert-labeled data to $D$: $D \leftarrow D \cup \{(s, \text{expert}(s)) \text{ for } s \text{ in trajectory}\}$
 ─────────────────────────────────────────────────────
 Key: Expert labels states that the LEARNED POLICY actually visits
      → Dataset covers the learned policy's actual distribution
@@ -640,7 +632,7 @@ DURING TRAINING:
   [ ] Save checkpoints every N episodes
   
 POST-TRAINING:
-  [ ] Evaluate on 100 episodes with ε=0 (pure exploitation)
+  [ ] Evaluate on 100 episodes with $\epsilon=0$ (pure exploitation)
   [ ] Test with environment variations (generalization check)
   [ ] Visualize agent trajectories (check for reward hacking)
   [ ] Compare against baseline (random policy, rule-based)
@@ -682,10 +674,10 @@ POST-TRAINING:
 **Q2: Explain the AlphaZero algorithm at a high level. What makes it remarkable?**
 > **A:** AlphaZero is remarkable for two reasons: (1) it requires no domain knowledge beyond game rules, and (2) it achieves superhuman performance in Chess, Shogi, and Go with a single algorithm.
 >
-> **Algorithm**: A single neural network outputs both (policy p, value v) from a board position. Training proceeds by:
-> 1. **Self-play with MCTS**: For each move, run 800 MCTS simulations. MCTS uses the neural network's policy prior for action selection and value estimates for leaf evaluation. The visit distribution π_MCTS (not the raw policy p) determines the actual move played.
-> 2. **Network training**: The network learns to predict: (a) the MCTS visit distribution π_MCTS (policy head) and (b) the final game outcome z ∈ {-1, 0, +1} (value head).
-> 3. **Iteration**: Repeat — better network → better MCTS → better training data → even better network.
+> **Algorithm**: A single neural network outputs both (policy $p$, value $v$) from a board position. Training proceeds by:
+> 1. **Self-play with MCTS**: For each move, run 800 MCTS simulations. MCTS uses the neural network's policy prior for action selection and value estimates for leaf evaluation. The visit distribution $\pi_{\text{MCTS}}$ (not the raw policy $p$) determines the actual move played.
+> 2. **Network training**: The network learns to predict: (a) the MCTS visit distribution $\pi_{\text{MCTS}}$ (policy head) and (b) the final game outcome $z \in \{-1, 0, +1\}$ (value head).
+> 3. **Iteration**: Repeat — better network $\rightarrow$ better MCTS $\rightarrow$ better training data $\rightarrow$ even better network.
 >
 > **What makes it remarkable**: Starting from random play, with no human games, AlphaZero rediscovered centuries of chess theory in 9 hours and found new moves that human grandmasters had never considered. It demonstrates that self-play + RL can produce genuine strategic creativity beyond human knowledge.
 
@@ -699,7 +691,7 @@ POST-TRAINING:
 **Q4: Compare model-free and model-based RL. When would you choose each?**
 > **A:**
 > **Model-Free**:
-> - No explicit model of P(s'|s,a) learned
+> - No explicit model of $P(s'|s,a)$ learned
 > - Pure trial-and-error from real environment interactions
 > - Examples: DQN, PPO, SAC
 > - **Advantages**: No model error accumulation, simpler to implement, robust to complex dynamics
@@ -707,7 +699,7 @@ POST-TRAINING:
 > - **Choose when**: Simulation is cheap (video games, physics simulators), real environment interaction is feasible, dynamics are too complex to model
 >
 > **Model-Based**:
-> - Explicitly learns P(s'|s,a) and R(s,a) from experience
+> - Explicitly learns $P(s'|s,a)$ and $R(s,a)$ from experience
 > - Plans using learned model (rollouts, MCTS, value estimation)
 > - Examples: Dyna, AlphaZero (MCTS), World Models, Dreamer
 > - **Advantages**: Far more sample-efficient (plan many steps without real interactions), enables lookahead planning
@@ -718,41 +710,37 @@ POST-TRAINING:
 
 ## ⚡ One-Page Flash Card {#revision}
 
-```
-╔══════════════════════════════════════════════════════════════════╗
-║         MODULE 06 — ADVANCED RL & OPEN PROBLEMS                  ║
-╠══════════════════════════════════════════════════════════════════╣
-║                                                                  ║
-║  BIG 3 OPEN CHALLENGES:                                          ║
-║  1. Sample inefficiency (DQN: 10M frames vs human: 100)         ║
-║  2. Reward design / reward hacking                               ║
-║  3. Generalization / transfer learning                           ║
-║                                                                  ║
-║  ALPHAZERO:                                                      ║
-║  - No human data. Self-play from random.                         ║
-║  - Single network: (board) -> (policy p, value v)                ║
-║  - MCTS guides search using p and v                              ║
-║  - Train network to predict MCTS distribution + game outcome     ║
-║  - Chess: superhuman in 9 hours. Go: beats AlphaGo 100-0.       ║
-║                                                                  ║
-║  DYNA (MODEL-BASED):                                             ║
-║  Real step: Q-learn from (s,a,r,s')                             ║
-║  Model step: n simulated Q-learns from learned model            ║
-║  -> n=50 gives ~50x sample efficiency                            ║
-║                                                                  ║
-║  CURIOSITY (ICM/RND):                                            ║
-║  r_int = ||predicted_feature - actual_feature||^2               ║
-║  High prediction error = novel state = high curiosity bonus      ║
-║                                                                  ║
-║  RLHF (LLMs):                                                    ║
-║  Human preferences -> Reward model -> PPO fine-tuning           ║
-║  + KL penalty to prevent reward hacking the reward model        ║
-║                                                                  ║
-║  DEBUGGING CHECKLIST:                                            ║
-║  Monitor: episode reward, grad norm, Q-values, entropy, epsilon  ║
-║  Visualize agent trajectories! Check for reward hacking!         ║
-╚══════════════════════════════════════════════════════════════════╝
-```
+> [!NOTE]
+> **MODULE 06 — ADVANCED RL & OPEN PROBLEMS REVISION CARD**
+> 
+> **BIG 3 OPEN CHALLENGES:**
+> 1. **Sample inefficiency** (DQN: 10M frames vs human: 100)
+> 2. **Reward design / reward hacking**
+> 3. **Generalization / transfer learning**
+> 
+> **ALPHAZERO:**
+> - No human data. Self-play from random.
+> - Single network: (board) $\rightarrow$ (policy $p$, value $v$)
+> - MCTS guides search using $p$ and $v$
+> - Train network to predict MCTS distribution + game outcome
+> - Chess: superhuman in 9 hours. Go: beats AlphaGo 100-0.
+> 
+> **DYNA (MODEL-BASED):**
+> - **Real step**: Q-learn from $(s,a,r,s')$
+> - **Model step**: $n$ simulated Q-learns from learned model
+> - $\rightarrow n=50$ gives $\sim 50\times$ sample efficiency
+> 
+> **CURIOSITY (ICM/RND):**
+> $$ r_{\text{int}} = ||\text{predicted\_feature} - \text{actual\_feature}||^2 $$
+> High prediction error = novel state = high curiosity bonus
+> 
+> **RLHF (LLMs):**
+> Human preferences $\rightarrow$ Reward model $\rightarrow$ PPO fine-tuning
+> + KL penalty to prevent reward hacking the reward model
+> 
+> **DEBUGGING CHECKLIST:**
+> Monitor: episode reward, grad norm, Q-values, entropy, $\epsilon$
+> Visualize agent trajectories! Check for reward hacking!
 
 ---
 

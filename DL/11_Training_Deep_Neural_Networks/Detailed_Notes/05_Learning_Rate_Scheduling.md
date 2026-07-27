@@ -24,6 +24,9 @@ Imagine navigating a hot air balloon to land on a target in a valley. If your ve
 
 To land quickly and safely, you drop rapidly while far above (high initial learning rate) to cover distance, and then slowly fire the burner to decelerate to a gentle crawl as you approach the ground (learning rate decay), settling exactly on the target.
 
+![Learning Rate Balloon Analogy](../Visuals/25_learning_rate_balloon_analogy.jpg)
+> 🎨 **AI Generated Visual 25:** Learning Rate Balloon Analogy. A simple diagram showing the hot air balloon analogy. High learning rate (large initial drops) transitions to decaying learning rate (smaller steps) as it approaches the optimal minimum target.
+
 ---
 
 ## 🔍 1. Finding the Optimal Learning Rate (The Range Test) {#lr-finder}

@@ -19,7 +19,7 @@
 
 ## 🌍 Start Here: The Big Picture {#big-picture}
 
-> **TL;DR:** Instead of estimating value functions, **Policy Gradient methods** directly optimize the policy parameters θ by ascending the gradient of expected return. REINFORCE is the foundational algorithm: collect a full episode, compute returns G_t, then update θ by reinforcing actions proportional to how good the outcome was.
+> **TL;DR:** Instead of estimating value functions, **Policy Gradient methods** directly optimize the policy parameters $\theta$ by ascending the gradient of expected return. REINFORCE is the foundational algorithm: collect a full episode, compute returns $G_t$, then update $\theta$ by reinforcing actions proportional to how good the outcome was.
 
 **The Real-World Analogy 🎰:**
 Imagine you're playing a slot machine for the first time and you don't know the rules. After each pull, you observe a payout. Over many trials, you naturally start pulling the lever more when it previously gave money and less when it didn't. REINFORCE does exactly this — it increases the probability of actions that led to high returns and decreases the probability of actions that led to low returns, weighted by *how much better or worse* they were than average.
@@ -127,7 +127,7 @@ plt.show()
 
 ## 🔍 2. Neural Network Policies {#nn-policy}
 
-Instead of a lookup table, we use a **neural network** to approximate the policy π_θ(a|s):
+Instead of a lookup table, we use a **neural network** to approximate the policy $\pi_\theta(a|s)$:
 
 ```
 Input: state s (4 numbers for CartPole)
@@ -189,38 +189,34 @@ REINFORCE is the **simplest policy gradient algorithm**, proposed by Williams (1
 
 ### Algorithm Steps
 
-```
-REINFORCE (Williams, 1992):
-─────────────────────────────────────────────────────────────────
-Input: Policy π_θ with parameters θ
-Hyperparameters: learning_rate α, discount γ
-
-1. Initialize θ randomly
-2. REPEAT (for each episode):
-   a. Run episode under π_θ, collect trajectory:
-      τ = {s_0, a_0, r_0, s_1, a_1, r_1, ..., s_T, a_T, r_T}
-   b. For each step t, compute discounted return:
-      G_t = Σ_{k=0}^{T-t} γ^k · r_{t+k}
-   c. For each step t, compute policy gradient:
-      ∇_θ J(θ) ≈ G_t · ∇_θ log π_θ(a_t | s_t)
-   d. Update parameters (gradient ASCENT on expected return):
-      θ ← θ + α · G_t · ∇_θ log π_θ(a_t | s_t)
-─────────────────────────────────────────────────────────────────
-```
+> [!TIP]
+> **REINFORCE (Williams, 1992):**
+> 
+> **Input**: Policy $\pi_\theta$ with parameters $\theta$  
+> **Hyperparameters**: learning_rate $\alpha$, discount $\gamma$
+> 
+> 1. Initialize $\theta$ randomly
+> 2. REPEAT (for each episode):
+>    - **a.** Run episode under $\pi_\theta$, collect trajectory:  
+>      $$\tau = \{s_0, a_0, r_0, s_1, a_1, r_1, \dots, s_T, a_T, r_T\}$$
+>    - **b.** For each step $t$, compute discounted return:  
+>      $$G_t = \sum_{k=0}^{T-t} \gamma^k r_{t+k}$$
+>    - **c.** For each step $t$, compute policy gradient:  
+>      $$\nabla_\theta J(\theta) \approx G_t \cdot \nabla_\theta \log \pi_\theta(a_t | s_t)$$
+>    - **d.** Update parameters (gradient ASCENT on expected return):  
+>      $$\theta \leftarrow \theta + \alpha \cdot G_t \cdot \nabla_\theta \log \pi_\theta(a_t | s_t)$$
 
 ### Why log π? — The Score Function Trick
 
 The key mathematical trick in REINFORCE is expressing the gradient of the expected return without needing the transition probabilities P(s'|s,a):
 
-```
-∇_θ E[G_t] = E[ G_t · ∇_θ log π_θ(a_t | s_t) ]
-```
+$$ \nabla_\theta \mathbb{E}[G_t] = \mathbb{E}[ G_t \cdot \nabla_\theta \log \pi_\theta(a_t | s_t) ] $$
 
 **Intuition**: 
-- `∇_θ log π_θ(a_t|s_t)` points in the direction of increasing the probability of action a_t.
-- Multiplying by `G_t` (the return): 
-  - If G_t is large (good episode) → take a big step toward making a_t more likely.
-  - If G_t is small/negative → take a step toward making a_t less likely.
+- $\nabla_\theta \log \pi_\theta(a_t|s_t)$ points in the direction of increasing the probability of action $a_t$.
+- Multiplying by $G_t$ (the return): 
+  - If $G_t$ is large (good episode) $\rightarrow$ take a big step toward making $a_t$ more likely.
+  - If $G_t$ is small/negative $\rightarrow$ take a step toward making $a_t$ less likely.
 
 ### Full Discounted Return Computation
 
@@ -255,33 +251,32 @@ print(discount_rewards(rewards, 0.95))
 ### Setup
 
 We want to maximize the expected return:
-```
-J(θ) = E_{τ~π_θ}[ G(τ) ]
-     = Σ_τ P(τ|θ) · G(τ)
-```
+$$ \begin{aligned} J(\theta) &= \mathbb{E}_{\tau \sim \pi_\theta}[ G(\tau) ] \\ &= \sum_\tau P(\tau|\theta) \cdot G(\tau) \end{aligned} $$
 
-where τ = (s_0, a_0, r_0, ..., s_T) is a trajectory.
+where $\tau = (s_0, a_0, r_0, \dots, s_T)$ is a trajectory.
 
 ### Gradient Derivation
 
-```
-∇_θ J(θ) = ∇_θ Σ_τ P(τ|θ) · G(τ)
-          = Σ_τ G(τ) · ∇_θ P(τ|θ)
+$$ \begin{aligned} 
+\nabla_\theta J(\theta) &= \nabla_\theta \sum_\tau P(\tau|\theta) \cdot G(\tau) \\ 
+&= \sum_\tau G(\tau) \cdot \nabla_\theta P(\tau|\theta) 
+\end{aligned} $$
 
-Using the log-derivative trick: ∇_θ P(τ|θ) = P(τ|θ) · ∇_θ log P(τ|θ)
+Using the log-derivative trick $\nabla_\theta P(\tau|\theta) = P(\tau|\theta) \cdot \nabla_\theta \log P(\tau|\theta)$:
 
-∇_θ J(θ) = Σ_τ P(τ|θ) · G(τ) · ∇_θ log P(τ|θ)
-          = E_{τ~π_θ}[ G(τ) · ∇_θ log P(τ|θ) ]
+$$ \begin{aligned}
+\nabla_\theta J(\theta) &= \sum_\tau P(\tau|\theta) \cdot G(\tau) \cdot \nabla_\theta \log P(\tau|\theta) \\
+&= \mathbb{E}_{\tau \sim \pi_\theta}[ G(\tau) \cdot \nabla_\theta \log P(\tau|\theta) ]
+\end{aligned} $$
 
-Expanding log P(τ|θ):
-  log P(τ|θ) = log P(s_0) + Σ_t [ log P(s_{t+1}|s_t, a_t) + log π_θ(a_t|s_t) ]
+Expanding $\log P(\tau|\theta)$:
+$$ \log P(\tau|\theta) = \log P(s_0) + \sum_t \left[ \log P(s_{t+1}|s_t, a_t) + \log \pi_\theta(a_t|s_t) \right] $$
 
-Since P(s_0) and P(s_{t+1}|s_t,a_t) don't depend on θ:
-  ∇_θ log P(τ|θ) = Σ_t ∇_θ log π_θ(a_t|s_t)
+Since $P(s_0)$ and $P(s_{t+1}|s_t,a_t)$ don't depend on $\theta$:
+$$ \nabla_\theta \log P(\tau|\theta) = \sum_t \nabla_\theta \log \pi_\theta(a_t|s_t) $$
 
-FINAL POLICY GRADIENT THEOREM:
-  ∇_θ J(θ) = E_{τ~π_θ} [ Σ_t G_t · ∇_θ log π_θ(a_t|s_t) ]
-```
+**FINAL POLICY GRADIENT THEOREM**:
+$$ \nabla_\theta J(\theta) = \mathbb{E}_{\tau \sim \pi_\theta} \left[ \sum_t G_t \cdot \nabla_\theta \log \pi_\theta(a_t|s_t) \right] $$
 
 > [!IMPORTANT]
 > **Key insight**: We don't need to know the environment dynamics P(s'|s,a) to compute the gradient! We only need the policy's own log-probabilities and the observed returns. This makes REINFORCE a **model-free** algorithm.
@@ -327,18 +322,14 @@ def play_multiple_episodes(env, n_episodes, n_max_steps, model, loss_fn):
 ### The Problem: High Variance in REINFORCE
 
 The REINFORCE gradient estimator:
-```
-∇_θ J(θ) ≈ (1/N) Σ_{i=1}^{N} G_t^{(i)} · ∇_θ log π_θ(a_t^{(i)} | s_t^{(i)})
-```
-has **extremely high variance** because G_t fluctuates a lot between episodes.
+$$ \nabla_\theta J(\theta) \approx \frac{1}{N} \sum_{i=1}^{N} G_t^{(i)} \cdot \nabla_\theta \log \pi_\theta\left(a_t^{(i)} | s_t^{(i)}\right) $$
+has **extremely high variance** because $G_t$ fluctuates a lot between episodes.
 
-### Solution: Subtract a Baseline b(s)
+### Solution: Subtract a Baseline $b(s)$
 
-The **Policy Gradient with Baseline** subtracts a state-dependent baseline b(s_t) from G_t:
+The **Policy Gradient with Baseline** subtracts a state-dependent baseline $b(s_t)$ from $G_t$:
 
-```
-∇_θ J(θ) = E[ (G_t - b(s_t)) · ∇_θ log π_θ(a_t|s_t) ]
-```
+$$ \nabla_\theta J(\theta) = \mathbb{E}\left[ (G_t - b(s_t)) \cdot \nabla_\theta \log \pi_\theta(a_t|s_t) \right] $$
 
 The baseline doesn't bias the gradient (can be shown mathematically), but **dramatically reduces variance**.
 
@@ -346,8 +337,8 @@ The baseline doesn't bias the gradient (can be shown mathematically), but **dram
 
 | Baseline | Description | Result |
 |---------|-------------|--------|
-| **Mean return** | b = mean(G_t) over episode batch | Simple, reduces variance |
-| **Value function V(s_t)** | b = V^π(s_t) | Optimal; gives advantage A(s,a) = G_t - V(s_t) |
+| **Mean return** | $b = \text{mean}(G_t)$ over episode batch | Simple, reduces variance |
+| **Value function $V(s_t)$** | $b = V^\pi(s_t)$ | Optimal; gives advantage $A(s,a) = G_t - V(s_t)$ |
 | **Moving average** | Exponentially weighted mean | Adaptive, avoids full-batch computation |
 
 ### Reward Normalization (Book's Approach)
@@ -515,79 +506,74 @@ for iteration in range(n_iterations):
 ## 🎤 Interview Q&A {#interview}
 
 **Q1: Explain the REINFORCE algorithm at an intuitive and mathematical level.**
-> **A:** **Intuitively**: At the end of each episode, REINFORCE asks "how good was this action?" by looking at the total discounted return G_t from that point forward. It then updates the policy to make good-outcome actions more probable (gradient ascent) and bad-outcome actions less probable.
+> **A:** **Intuitively**: At the end of each episode, REINFORCE asks "how good was this action?" by looking at the total discounted return $G_t$ from that point forward. It then updates the policy to make good-outcome actions more probable (gradient ascent) and bad-outcome actions less probable.
 >
 > **Mathematically**: By the Policy Gradient Theorem:
-> `∇_θ J(θ) = E[ G_t · ∇_θ log π_θ(a_t|s_t) ]`
+> $$ \nabla_\theta J(\theta) = \mathbb{E}[ G_t \cdot \nabla_\theta \log \pi_\theta(a_t|s_t) ] $$
 >
-> This is implemented as: after collecting a trajectory, multiply the log-gradient of the policy at each step by the discounted return from that step, then update parameters in that direction. The log-derivative trick eliminates the need to know the environment transition function P(s'|s,a), making it fully model-free.
+> This is implemented as: after collecting a trajectory, multiply the log-gradient of the policy at each step by the discounted return from that step, then update parameters in that direction. The log-derivative trick eliminates the need to know the environment transition function $P(s'|s,a)$, making it fully model-free.
 
 **Q2: What is the key weakness of REINFORCE and how do Actor-Critic methods address it?**
-> **A:** REINFORCE's primary weakness is **high variance**. Using the full Monte Carlo return G_t means that a single unlucky random event late in an episode contaminates the gradient signal for all earlier actions.
+> **A:** REINFORCE's primary weakness is **high variance**. Using the full Monte Carlo return $G_t$ means that a single unlucky random event late in an episode contaminates the gradient signal for all earlier actions.
 >
 > **Actor-Critic** methods address this by:
-> 1. **Replacing G_t with the advantage**: A(s_t, a_t) = r_t + γ·V(s_{t+1}) - V(s_t)
-> 2. A separate **Critic** network learns V(s) using TD learning (low-bias, low-variance estimates)
-> 3. The **Actor** uses A(s,a) instead of G_t as the weight for the gradient update
+> 1. **Replacing $G_t$ with the advantage**: $A(s_t, a_t) = r_t + \gamma V(s_{t+1}) - V(s_t)$
+> 2. A separate **Critic** network learns $V(s)$ using TD learning (low-bias, low-variance estimates)
+> 3. The **Actor** uses $A(s,a)$ instead of $G_t$ as the weight for the gradient update
 >
-> The advantage A(s,a) measures "how much better was action a compared to average?" — this is a much lower-variance signal than the full Monte Carlo return.
+> The advantage $A(s,a)$ measures "how much better was action $a$ compared to average?" — this is a much lower-variance signal than the full Monte Carlo return.
 
 **Q3: Why is the log-derivative trick essential in policy gradients?**
-> **A:** The log-derivative trick allows us to compute `∇_θ E_{τ~π_θ}[G(τ)]` without knowing the environment dynamics. Here's why:
+> **A:** The log-derivative trick allows us to compute $\nabla_\theta \mathbb{E}_{\tau \sim \pi_\theta}[G(\tau)]$ without knowing the environment dynamics. Here's why:
 >
-> The naive gradient `∇_θ Σ_τ P(τ|θ)·G(τ)` is intractable because it requires summing over all possible trajectories τ.
+> The naive gradient $\nabla_\theta \sum_\tau P(\tau|\theta) \cdot G(\tau)$ is intractable because it requires summing over all possible trajectories $\tau$.
 >
-> The trick uses: `∇_θ P(τ|θ) = P(τ|θ)·∇_θ log P(τ|θ)`
+> The trick uses: $\nabla_\theta P(\tau|\theta) = P(\tau|\theta) \cdot \nabla_\theta \log P(\tau|\theta)$
 >
-> Expanding log P(τ|θ), the transition probabilities P(s'|s,a) appear — but they don't depend on θ, so their gradients are zero! Only `Σ_t log π_θ(a_t|s_t)` survives differentiation. This means we can estimate the gradient purely from sampled trajectories and policy log-probabilities, with no model of the environment required.
+> Expanding $\log P(\tau|\theta)$, the transition probabilities $P(s'|s,a)$ appear — but they don't depend on $\theta$, so their gradients are zero! Only $\sum_t \log \pi_\theta(a_t|s_t)$ survives differentiation. This means we can estimate the gradient purely from sampled trajectories and policy log-probabilities, with no model of the environment required.
 
-**Q4: What is the role of the discount factor γ in REINFORCE? What happens at γ=0 and γ=1?**
-> **A:** The discount factor γ ∈ [0,1) controls how much future rewards contribute to the current step's return:
+**Q4: What is the role of the discount factor $\gamma$ in REINFORCE? What happens at $\gamma=0$ and $\gamma=1$?**
+> **A:** The discount factor $\gamma \in [0,1)$ controls how much future rewards contribute to the current step's return:
 >
-> `G_t = r_t + γ·r_{t+1} + γ²·r_{t+2} + ...`
+> $G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \dots$
 >
-> - **γ = 0**: Completely myopic — only the immediate reward r_t matters. G_t = r_t. The agent ignores future consequences entirely.
-> - **γ = 0.95**: Future reward at step k worth γ^k = 0.95^k of its face value. Reward 20 steps ahead worth ~36%. Balanced short/long-term.
-> - **γ = 0.99**: Long-horizon discount. Reward 100 steps ahead worth ~37%. Good for tasks requiring long-term planning.
-> - **γ = 1**: No discounting. G_t = sum of all future rewards. Valid only for finite-horizon episodic tasks. For continuing tasks, G_t → ∞ and the algorithm diverges.
+> - **$\gamma = 0$**: Completely myopic — only the immediate reward $r_t$ matters. $G_t = r_t$. The agent ignores future consequences entirely.
+> - **$\gamma = 0.95$**: Future reward at step $k$ worth $\gamma^k = 0.95^k$ of its face value. Reward 20 steps ahead worth ~36%. Balanced short/long-term.
+> - **$\gamma = 0.99$**: Long-horizon discount. Reward 100 steps ahead worth ~37%. Good for tasks requiring long-term planning.
+> - **$\gamma = 1.0$**: No discounting. $G_t$ = sum of all future rewards. Valid only for finite-horizon episodic tasks. For continuing tasks, $G_t \rightarrow \infty$ and the algorithm diverges.
 >
-> In CartPole (max 200 steps), γ=0.95 is standard. Each +1 step reward from the episode is accumulated into G_t = 1 + 0.95 + 0.95² + ... ≈ 20 for a perfect episode.
+> In CartPole (max 200 steps), $\gamma=0.95$ is standard. Each +1 step reward from the episode is accumulated into $G_t = 1 + 0.95 + 0.95^2 + \dots \approx 20$ for a perfect episode.
 
 ---
 
 ## ⚡ One-Page Flash Card {#revision}
 
-```
-╔══════════════════════════════════════════════════════════════════╗
-║        MODULE 02 — GYM + REINFORCE POLICY GRADIENT              ║
-╠══════════════════════════════════════════════════════════════════╣
-║                                                                  ║
-║  GYM API:                                                        ║
-║  obs, info = env.reset(seed=42)                                  ║
-║  obs, reward, terminated, truncated, info = env.step(action)     ║
-║                                                                  ║
-║  REINFORCE ALGORITHM:                                            ║
-║  1. Collect N episodes under policy pi_theta                     ║
-║  2. Compute discounted returns G_t (backward pass)               ║
-║  3. Normalize G_t (subtract mean, divide by std)                 ║
-║  4. Gradient: G_t * nabla_theta log pi_theta(a_t|s_t)            ║
-║  5. Apply gradient ASCENT: theta <- theta + alpha * grad         ║
-║                                                                  ║
-║  KEY HYPERPARAMETERS:                                            ║
-║  gamma = 0.95  (discount factor)                                 ║
-║  lr = 0.01  (Nadam optimizer)                                    ║
-║  n_episodes_per_update = 10  (batch for variance reduction)      ║
-║  n_iterations = 150  (training steps)                            ║
-║                                                                  ║
-║  POLICY NETWORK (CartPole):                                      ║
-║  Input(4) -> Dense(5, relu) -> Dense(1, sigmoid) -> P(right)    ║
-║                                                                  ║
-║  COMMON PITFALLS:                                                ║
-║  minimize() vs ascent -> negate gradients!                       ║
-║  No normalization -> all actions reinforced equally              ║
-║  On-policy: DISCARD old trajectories after each update           ║
-╚══════════════════════════════════════════════════════════════════╝
-```
+> [!NOTE]
+> **MODULE 02 — GYM + REINFORCE POLICY GRADIENT REVISION CARD**
+> 
+> **GYM API:**
+> `obs, info = env.reset(seed=42)`
+> `obs, reward, terminated, truncated, info = env.step(action)`
+> 
+> **REINFORCE ALGORITHM:**
+> 1. Collect $N$ episodes under policy $\pi_\theta$
+> 2. Compute discounted returns $G_t$ (backward pass)
+> 3. Normalize $G_t$ (subtract mean, divide by std)
+> 4. Gradient: $G_t \nabla_\theta \log \pi_\theta(a_t|s_t)$
+> 5. Apply gradient **ASCENT**: $\theta \leftarrow \theta + \alpha \nabla_\theta J(\theta)$
+> 
+> **KEY HYPERPARAMETERS:**
+> - $\gamma = 0.95$ (discount factor)
+> - $\text{lr} = 0.01$ (Nadam optimizer)
+> - $\text{batch size} = 10$ episodes (variance reduction)
+> 
+> **POLICY NETWORK (CartPole):**
+> $\text{Input}(4) \rightarrow \text{Dense}(5, \text{ReLU}) \rightarrow \text{Dense}(1, \text{Sigmoid}) \rightarrow P(\text{right})$
+> 
+> **COMMON PITFALLS:**
+> 1. `minimize()` vs ascent $\rightarrow$ negate gradients!
+> 2. No normalization $\rightarrow$ all actions reinforced equally
+> 3. On-policy $\rightarrow$ DISCARD old trajectories after each update
 
 ---
 

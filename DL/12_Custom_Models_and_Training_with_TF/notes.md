@@ -5,10 +5,9 @@
 
 ---
 
-## 🖼️ Visual Gallery (Python-Generated Graphs)
+## 🖼️ Visual Gallery (AI-Generated Diagrams)
 
 > All visuals are in the [`Visuals/`](Visuals/) folder and are embedded in each module.
-> Re-generate anytime: `python3 generate_visuals.py`
 
 | # | Graph | Module | File |
 |---|-------|--------|------|
