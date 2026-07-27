@@ -4,47 +4,47 @@ Welcome to the complete, production-grade OOP Handbook! This guide compiles all 
 
 ## Table of Contents
 
-1. [OOP Overview & The 4 Pillars](oop-overview-v2.md)
+1. [OOP Overview & The 4 Pillars](1-oop-overview-v2.md)
    - What is OOP and how it compares to Procedural/Functional Programming.
    - High-level overview of Encapsulation, Abstraction, Inheritance, and Polymorphism.
    - Composition over Inheritance & Data-Oriented Design.
 
-2. [Classes and Objects](classes-and-objects-v2.md)
+2. [Classes and Objects](2-classes-and-objects-v2.md)
    - Blueprints and Instances.
    - Stack vs Heap memory allocation and Object Headers.
    - `new` keyword and JVM instantiation.
 
-3. [Methods](methods-v2.md)
+3. [Methods](3-methods-v2.md)
    - Object behavioral contracts.
    - Instance vs Static methods, and the hidden `this` pointer.
    - Dynamic dispatch, vtables, and JIT method inlining.
 
-4. [Constructors](constructors-v2.md)
+4. [Constructors](4-constructors-v2.md)
    - Initializing object state and invariant establishment.
    - Constructor chaining (`this()`, `super()`), Factory methods, and Copy constructors.
    - Resource Acquisition Is Initialization (RAII).
 
-5. [Inheritance](inheritance-v2.md)
+5. [Inheritance](5-inheritance-v2.md)
    - IS-A relationships and code reusability.
    - The Diamond Problem, memory layouts, and vptr/vtable internals.
    - The Fragile Base Class problem.
 
-6. [Polymorphism](polymorphism-v2.md)
+6. [Polymorphism](6-polymorphism-v2.md)
    - Compile-time (Method Overloading) vs Run-time (Method Overriding).
    - Dynamic Binding and JIT Devirtualization.
    - Strategy patterns and behavioral flexibility.
 
-7. [Encapsulation](encapsulation-v2.md)
+7. [Encapsulation](7-encapsulation-v2.md)
    - Data hiding, protection, and invariant enforcement.
    - Access modifiers across different languages.
    - Getters, Setters, Defensive copying, and Immutability.
 
-8. [Abstraction](abstraction.md)
+8. [Abstraction](8-abstraction.md)
    - Hiding implementation complexity and API boundaries.
    - Abstract Classes vs Interfaces.
    - Dependency Inversion Principle (DIP).
 
-9. [SOLID Principles](solid-principles.md)
+9. [SOLID Principles](9-solid-principles.md)
    - The five foundational principles of OOP (SRP, OCP, LSP, ISP, DIP).
    - Code smells and how to refactor into robust OOP designs.
 
